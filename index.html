@@ -1712,7 +1712,7 @@ function connect() {
 
 
 
-    ws = new WebSocket('WS_BASE');
+    ws = new WebSocket(WS_BASE);
 
 
 
@@ -1764,7 +1764,7 @@ function connect() {
 
 
 
-        console.log('连接断开❌?秒后自动重连...');
+        console.log('连接断开，3秒后自动重连...');
 
 
 
@@ -1780,7 +1780,7 @@ function connect() {
 
 
 
-        console.log('连接错误❌?秒后重试...');
+        console.log('连接错误，3秒后重试...');
 
 
 
@@ -2032,7 +2032,7 @@ function handleMessage(data) {
 
 
 
-                addSystemMsg(`👑 房主转移给?${data.new_owner}`);
+                addSystemMsg(`👑 房主转移给${data.new_owner}`);
 
 
 
@@ -2076,7 +2076,7 @@ function handleMessage(data) {
 
 
 
-            alert('你被移出了房❌? ' + data.message);
+            alert('你被移出了房间 ' + data.message);
 
 
 
@@ -2192,7 +2192,7 @@ function createRoom() {
 
 
 
-        document.getElementById('login-status').textContent = '人数需?-5人之❌?;
+        document.getElementById('login-status').textContent = '人数需2-5人之间;
 
 
 
@@ -2456,7 +2456,7 @@ async function refreshRooms() {
 
 
 
-        const res = await fetch('API_BASE/api/rooms');
+        const res = await fetch(API_BASE + '/api/rooms');
 
 
 
@@ -2472,7 +2472,7 @@ async function refreshRooms() {
 
 
 
-        document.getElementById('room-list').innerHTML = '<div class="empty-msg">无法加载房间列表，请确保后端已启❌?/div>';
+        document.getElementById('room-list').innerHTML = '<div class="empty-msg">无法加载房间列表，请确保后端已启动/div>';
 
 
 
@@ -2524,7 +2524,7 @@ function renderRoomList(rooms) {
 
 
 
-            <div class="room-status ${r.status === 'playing' ? 'playing' : 'waiting'}">${r.status === 'playing' ? '🔴 进行❌? : '🟢 等待❌?}</div>
+            <div class="room-status ${r.status === 'playing' ? 'playing' : 'waiting'}">${r.status === 'playing' ? '🔴 进行中 : '🟢 等待中}</div>
 
 
 
@@ -2544,7 +2544,7 @@ function renderRoomList(rooms) {
 
 
 
-            <button ${r.status === 'playing' ? 'disabled title="游戏进行❌?' : ''} onclick="quickJoin(${r.id})">加入房间</button>
+            <button ${r.status === 'playing' ? 'disabled title="游戏进行中' : ''} onclick="quickJoin(${r.id})">加入房间</button>
 
 
 
@@ -2692,7 +2692,7 @@ function enterRoom(room, playerName, messages) {
 
 
 
-    addSystemMsg(`🎲 欢迎来到?{room.name}」！`);
+    addSystemMsg(`🎲 欢迎来到「{room.name}」！`);
 
 
 
@@ -2948,7 +2948,7 @@ async function uploadAvatar(fileInput) {
 
 
 
-    if (file.size > 5 * 1024 * 1024) { alert('图片太大，请控制❌?MB以内'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('图片太大，请控制在5MB以内'); return; }
 
 
 
@@ -2956,7 +2956,7 @@ async function uploadAvatar(fileInput) {
 
 
 
-    statusEl.textContent = '处理中?..';
+    statusEl.textContent = '处理中...';
 
 
 
@@ -3088,11 +3088,11 @@ async function uploadAvatar(fileInput) {
 
 
 
-        statusEl.textContent = '上传中?..';
+        statusEl.textContent = '上传中...';
 
 
 
-        const res = await fetch('API_BASE/api/avatar/upload', { method: 'POST', body: formData });
+        const res = await fetch(API_BASE + '/api/avatar/upload', { method: 'POST', body: formData });
 
 
 
@@ -3480,7 +3480,7 @@ async function refreshPlayers() {
 
 
 
-        const res = await fetch('API_BASE/api/rooms/' + currentRoomId + '/players');
+        const res = await fetch(API_BASE + '/api/rooms/' + currentRoomId + '/players');
 
 
 
@@ -3824,7 +3824,7 @@ function renderCharCard(player) {
 
 
 
-    html += `<button class="btn-save-char" onclick="saveCharCard()">💾 保存角色?/button>`;
+    html += `<button class="btn-save-char" onclick="saveCharCard()">💾 保存角色卡/button>`;
 
 
 
@@ -4192,7 +4192,7 @@ function dismissRoom() {
 
 
 
-    if (!confirm('解散房间将清空所有聊天记录，确定解散吗?)) return;
+    if (!confirm('解散房间将清空所有聊天记录，确定解散吗？)) return;
 
 
 
