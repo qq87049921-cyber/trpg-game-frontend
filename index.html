@@ -2472,7 +2472,7 @@ async function refreshRooms() {
 
 
 
-        document.getElementById('room-list').innerHTML = '<div class="empty-msg">无法加载房间列表，请确保后端已启动/div>';
+        document.getElementById('room-list').innerHTML = '<div class="empty-msg">无法加载房间列表，请确保后端已启动</div>';
 
 
 
@@ -2524,7 +2524,7 @@ function renderRoomList(rooms) {
 
 
 
-            <div class="room-status ${r.status === 'playing' ? 'playing' : 'waiting'}">${r.status === 'playing' ? '🔴 进行中 : '🟢 等待中}</div>
+            <div class="room-status ${r.status === 'playing' ? 'playing' : 'waiting'}">${r.status === 'playing' ? '🔴 进行中'🟢 等待中}</div>
 
 
 
@@ -2544,7 +2544,7 @@ function renderRoomList(rooms) {
 
 
 
-            <button ${r.status === 'playing' ? 'disabled title="游戏进行中' : ''} onclick="quickJoin(${r.id})">加入房间</button>
+            <button ${r.status === 'playing' ? 'disabled title="游戏进行中" : ''} onclick="quickJoin(${r.id})">加入房间</button>
 
 
 
@@ -2776,7 +2776,7 @@ async function doRoll(formula) {
 
 
 
-        const res = await fetch(`API_BASE/api/roll`, {
+        const res = await fetch(`${API_BASE}/api/roll`, {
 
 
 
@@ -2836,7 +2836,7 @@ async function loadTasks() {
 
 
 
-        const r = await fetch(`API_BASE/api/rooms/${currentRoomId}/tasks`);
+        const r = await fetch(`${API_BASE}/api/rooms/${currentRoomId}/tasks`);
 
 
 
@@ -3396,7 +3396,7 @@ async function doHiddenRoll(formula) {
 
 
 
-        const res = await fetch(`API_BASE/api/roll`, {
+        const res = await fetch(`${API_BASE}/api/roll`, {
 
 
 
@@ -3772,7 +3772,7 @@ function renderCharCard(player) {
 
 
 
-    } else if (rule === '无限流) {
+    } else if (rule === '无限流') {
 
 
 
@@ -4020,7 +4020,7 @@ function saveCharCard() {
 
 
 
-    } else if (rule === '无限流) {
+    } else if (rule === '无限流') {
 
 
 
@@ -4192,7 +4192,7 @@ function dismissRoom() {
 
 
 
-    if (!confirm('解散房间将清空所有聊天记录，确定解散吗？)) return;
+    if (!confirm('解散房间将清空所有聊天记录，确定解散吗？')) return;
 
 
 
