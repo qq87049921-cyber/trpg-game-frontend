@@ -54,7 +54,7 @@
         .tab-content.active { display: block; }
         .status-msg { text-align: center; color: #888; font-size: 13px; margin-top: 8px; min-height: 18px; }
 
-        /* ========== 主容器========== */
+        /* ========== 主容�?========== */
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
         /* ========== 大堂 ========== */
@@ -97,7 +97,7 @@
         .room-card button:disabled { background: #333; color: #555; cursor: not-allowed; }
         .empty-msg { text-align: center; color: #555; padding: 60px; font-size: 16px; }
 
-        /* ========== 房间内界面========== */
+        /* ========== 房间内界�?========== */
         .room-view { display: none; }
         .room-view.active { display: block; }
         .room-topbar {
@@ -123,7 +123,7 @@
             .room-main { grid-template-columns: 1fr; }
         }
 
-        /* 聊天区*/
+        /* 聊天�?*/
         .chat-panel {
             background: #16213e; border-radius: 12px; overflow: hidden;
             display: flex; flex-direction: column;
@@ -162,7 +162,7 @@
         .chat-input-area button:hover { background: #d63050; }
         .chat-input-area button:disabled { background: #333; color: #555; cursor: not-allowed; }
 
-        /* 右侧栏*/
+        /* 右侧�?*/
         .sidebar { display: flex; flex-direction: column; gap: 16px; }
         .panel-card {
             background: #16213e; border-radius: 12px; overflow: hidden;
@@ -278,7 +278,7 @@
     <div id="room-list"></div>
 </div>
 
-<!-- ========== 房间内界面========== -->
+<!-- ========== 房间内界�?========== -->
 <div id="room-view" class="container room-view">
 
     <!-- 顶部�?-->
@@ -346,7 +346,7 @@
             </div>
         </div>
 
-        <!-- 右侧栏-->
+        <!-- 右侧�?-->
         <div class="sidebar">
 
             <!-- 玩家列表 -->
@@ -388,7 +388,7 @@
 
 <script>
 // ================================================
-// 全局状态
+// 全局状�?
 // ================================================
 let ws = null;
 let currentPlayer = '';
@@ -937,7 +937,7 @@ function renderCharCard(player) {
         html += `<div class="char-row"><label>AC</label><input id="char-AC" type="number" value="${charData.AC || ''}" placeholder="0" style="max-width:60px"></div>`;
         html += renderTagList('spells', '法术');
         html += renderTagList('features', '特�?);
-    } else if (rule === '无限流) {
+    } else if (rule === '无限�?) {
         html += `<div class="char-section"><div class="char-section-title">属�?/div>`;
         const attrs = ['STR','DEX','CON','INT','WIS','CHA'];
         attrs.forEach(a => {
@@ -999,7 +999,7 @@ function saveCharCard() {
         });
         data.spells = charData.spells || [];
         data.features = charData.features || [];
-    } else if (rule === '无限流) {
+    } else if (rule === '无限�?) {
         ['STR','DEX','CON','INT','WIS','CHA'].forEach(a => {
             const el = document.getElementById('char-' + a);
             if (el && el.value) data[a] = parseInt(el.value) || 0;
@@ -1057,9 +1057,10 @@ function escapeHtml(str) {
 }
 
 // ================================================
-// 初始化
+// 初始�?
 // ================================================
 connect();
 </script>
 </body>
 </html>
+
