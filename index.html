@@ -918,6 +918,24 @@
 
 
 
+
+    <!-- 动态加载后端地址 -->
+    <script>
+    var API_BASE = 'http://REPLACE_ME.trycloudflare.com';
+    var WS_BASE = 'ws://REPLACE_ME.trycloudflare.com';
+    (function() {
+        fetch('config.json?t=' + Date.now())
+            .then(function(r) { return r.json(); })
+            .then(function(cfg) {
+                if (cfg && cfg.apiUrl) {
+                    API_BASE = cfg.apiUrl.replace(/\/$/, '');
+                    WS_BASE = API_BASE.replace(/^http/, 'ws');
+                    console.log('Config loaded: ' + API_BASE);
+                }
+            })
+            .catch(function(e) { console.warn('config.json not found, using default URL'); });
+    })();
+    </script>
 </head>
 
 
@@ -1694,7 +1712,7 @@ function connect() {
 
 
 
-    ws = new WebSocket('ws://recognize-charitable-nylon-solving.trycloudflare.com');
+    ws = new WebSocket('WS_BASE');
 
 
 
@@ -2438,7 +2456,7 @@ async function refreshRooms() {
 
 
 
-        const res = await fetch('http://recognize-charitable-nylon-solving.trycloudflare.com/api/rooms');
+        const res = await fetch('API_BASE/api/rooms');
 
 
 
@@ -2758,7 +2776,7 @@ async function doRoll(formula) {
 
 
 
-        const res = await fetch(`http://recognize-charitable-nylon-solving.trycloudflare.com/api/roll`, {
+        const res = await fetch(`API_BASE/api/roll`, {
 
 
 
@@ -2818,7 +2836,7 @@ async function loadTasks() {
 
 
 
-        const r = await fetch(`http://recognize-charitable-nylon-solving.trycloudflare.com/api/rooms/${currentRoomId}/tasks`);
+        const r = await fetch(`API_BASE/api/rooms/${currentRoomId}/tasks`);
 
 
 
@@ -3074,7 +3092,7 @@ async function uploadAvatar(fileInput) {
 
 
 
-        const res = await fetch('http://recognize-charitable-nylon-solving.trycloudflare.com/api/avatar/upload', { method: 'POST', body: formData });
+        const res = await fetch('API_BASE/api/avatar/upload', { method: 'POST', body: formData });
 
 
 
@@ -3378,7 +3396,7 @@ async function doHiddenRoll(formula) {
 
 
 
-        const res = await fetch(`http://recognize-charitable-nylon-solving.trycloudflare.com/api/roll`, {
+        const res = await fetch(`API_BASE/api/roll`, {
 
 
 
@@ -3462,7 +3480,7 @@ async function refreshPlayers() {
 
 
 
-        const res = await fetch('http://recognize-charitable-nylon-solving.trycloudflare.com/api/rooms/' + currentRoomId + '/players');
+        const res = await fetch('API_BASE/api/rooms/' + currentRoomId + '/players');
 
 
 
