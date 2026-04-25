@@ -1,2130 +1,4260 @@
-﻿<!DOCTYPE html>
-
-<html lang="zh-CN">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>TRPG 跑团系统</title>
-
-    <link rel="stylesheet" href="css/style.css">
-
-    <style>
-
-        /* ========== 全局 ========== */
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
-
-
-
-        /* ========== 登录弹窗 ========== */
-
-        .modal-overlay {
-
-            position: fixed; inset: 0;
-
-            background: rgba(0,0,0,0.7);
-
-            display: flex; align-items: center; justify-content: center;
-
-            z-index: 1000;
-
-        }
-
-        .modal-overlay.hidden { display: none; }
-
-        .modal-box {
-
-            background: #16213e; border-radius: 12px; padding: 32px;
-
-            width: 420px; max-width: 90vw;
-
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-
-        }
-
-        .modal-box h2 { text-align: center; margin-bottom: 24px; color: #e94560; }
-
-        .modal-box input, .modal-box select {
-
-            width: 100%; padding: 12px; margin-bottom: 14px;
-
-            border: 1px solid #333; border-radius: 8px;
-
-            background: #1a1a2e; color: #eee; font-size: 15px;
-
-        }
-
-        .modal-box button {
-
-            width: 100%; padding: 12px; border: none; border-radius: 8px;
-
-            background: #e94560; color: white; font-size: 16px;
-
-            cursor: pointer; margin-bottom: 10px;
-
-            transition: background 0.2s;
-
-        }
-
-        .modal-box button:hover { background: #d63050; }
-
-        .modal-box button.secondary {
-
-            background: #333; color: #aaa; font-size: 14px;
-
-        }
-
-        .modal-box button.secondary:hover { background: #444; }
-
-        .modal-tabs {
-
-            display: flex; margin-bottom: 20px;
-
-        }
-
-        .modal-tabs button {
-
-            flex: 1; background: transparent; border-bottom: 2px solid transparent;
-
-            color: #888; font-size: 15px; padding: 8px;
-
-        }
-
-        .modal-tabs button.active {
-
-            border-bottom-color: #e94560; color: #eee;
-
-        }
-
-        .tab-content { display: none; }
-
-        .tab-content.active { display: block; }
-
-        .status-msg { text-align: center; color: #888; font-size: 13px; margin-top: 8px; min-height: 18px; }
-
-
-
-        /* ========== 主容器========== */
-
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-
-
-
-        /* ========== 大堂 ========== */
-
-        .lobby-header {
-
-            display: flex; align-items: center; justify-content: space-between;
-
-            margin-bottom: 20px;
-
-        }
-
-        .lobby-header h1 { color: #e94560; }
-
-        .lobby-header button {
-
-            padding: 10px 24px; background: #e94560; border: none;
-
-            border-radius: 8px; color: white; font-size: 15px; cursor: pointer;
-
-        }
-
-        .lobby-header button:hover { background: #d63050; }
-
-
-
-        /* 房间卡片网格 */
-
-        .room-grid {
-
-            display: grid;
-
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-
-            gap: 16px;
-
-        }
-
-        .room-card {
-
-            background: #16213e; border-radius: 12px; padding: 20px;
-
-            border: 1px solid #333;
-
-            transition: transform 0.2s, border-color 0.2s;
-
-        }
-
-        .room-card:hover { transform: translateY(-2px); border-color: #e94560; }
-
-        .room-card .room-name { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #eee; }
-
-        .room-card .room-info { font-size: 13px; color: #888; margin-bottom: 12px; }
-
-        .room-card .room-status {
-
-            display: inline-block; padding: 3px 10px; border-radius: 12px;
-
-            font-size: 12px; margin-bottom: 12px;
-
-        }
-
-        .room-card .room-status.waiting { background: #2d6a4f; color: #d8f3dc; }
-
-        .room-card .room-status.playing { background: #b5179e; color: #f0abfc; }
-
-        .room-card button {
-
-            width: 100%; padding: 10px; border: none; border-radius: 8px;
-
-            background: #e94560; color: white; font-size: 14px; cursor: pointer;
-
-        }
-
-        .room-card button:hover { background: #d63050; }
-
-        .room-card button:disabled { background: #333; color: #555; cursor: not-allowed; }
-
-        .empty-msg { text-align: center; color: #555; padding: 60px; font-size: 16px; }
-
-
-
-        /* ========== 房间内界面========== */
-
-        .room-view { display: none; }
-
-        .room-view.active { display: block; }
-
-        .room-topbar {
-
-            display: flex; align-items: center; gap: 12px;
-
-            margin-bottom: 16px; background: #16213e;
-
-            padding: 12px 20px; border-radius: 10px;
-
-        }
-
-        .room-topbar .room-title { font-size: 18px; font-weight: bold; flex: 1; }
-
-        .room-topbar .room-title span { color: #e94560; }
-
-        .room-topbar button {
-
-            padding: 8px 16px; border: none; border-radius: 6px;
-
-            font-size: 13px; cursor: pointer;
-
-        }
-
-        .room-topbar .btn-leave { background: #333; color: #aaa; }
-
-        .room-topbar .btn-leave:hover { background: #444; }
-
-        .room-topbar .btn-rename { background: #1a4a7a; color: #7ec8e3; }
-
-        .room-main {
-
-            display: grid;
-
-            grid-template-columns: 1fr 260px;
-
-            gap: 16px;
-
-        }
-
-        @media (max-width: 700px) {
-
-            .room-main { grid-template-columns: 1fr; }
-
-        }
-
-
-
-        /* 聊天区*/
-
-        .chat-panel {
-
-            background: #16213e; border-radius: 12px; overflow: hidden;
-
-            display: flex; flex-direction: column;
-
-        }
-
-        .panel-header {
-
-            padding: 12px 16px; background: #1a1a2e;
-
-            border-bottom: 1px solid #333; font-size: 14px; color: #888;
-
-        }
-
-        .messages-box {
-
-            flex: 1; min-height: 400px; max-height: 60vh;
-
-            overflow-y: auto; padding: 16px;
-
-        }
-
-        .msg-item {
-
-            margin-bottom: 12px; padding: 10px 14px; border-radius: 10px;
-
-            line-height: 1.6; font-size: 14px;
-
-        }
-
-        .msg-item.public { background: #1f2f4a; }
-
-        .msg-item.private { background: #2a1f4a; border-left: 3px solid #9b59b6; }
-
-        .msg-item.kp { background: #0d3b2e; border-left: 3px solid #2ecc71; }
-
-        .msg-item.system { background: #2a2a1a; color: #aaa; font-size: 13px; text-align: center; }
-
-        .msg-item .sender { color: #e94560; font-weight: bold; margin-right: 6px; }
-
-        .msg-item.kp .sender { color: #2ecc71; }
-
-        .chat-input-area {
-
-            display: flex; gap: 8px; padding: 12px; background: #1a1a2e;
-
-            border-top: 1px solid #333;
-
-        }
-
-        .chat-input-area input {
-
-            flex: 1; padding: 10px 14px; border: 1px solid #333;
-
-            border-radius: 8px; background: #16213e; color: #eee; font-size: 14px;
-
-        }
-
-        .chat-input-area input:focus { outline: none; border-color: #e94560; }
-
-        .chat-input-area button {
-
-            padding: 10px 20px; border: none; border-radius: 8px;
-
-            background: #e94560; color: white; font-size: 14px; cursor: pointer;
-
-        }
-
-        .chat-input-area button:hover { background: #d63050; }
-
-        .chat-input-area button:disabled { background: #333; color: #555; cursor: not-allowed; }
-
-
-
-        /* 右侧栏*/
-
-        .sidebar { display: flex; flex-direction: column; gap: 16px; }
-
-        .panel-card {
-
-            background: #16213e; border-radius: 12px; overflow: hidden;
-
-        }
-
-        .dice-btn {
-
-            width: 44px; padding: 8px 0; border: none; border-radius: 6px;
-
-            background: #1a1a2e; color: #e94560; font-size: 13px;
-
-            font-weight: bold; cursor: pointer;
-
-            border: 1px solid #e94560;
-
-        }
-
-        .dice-btn:hover { background: #e94560; color: #fff; }
-
-        .sidebar#left-sidebar { gap: 10px; }
-
-        .sidebar#left-sidebar .panel-card h3 { padding: 10px 12px; font-size: 13px; }
-
-        .player-item {
-
-            padding: 10px 16px; border-bottom: 1px solid #222;
-
-            display: flex; align-items: center; gap: 8px;
-
-            font-size: 14px;
-
-        }
-
-        .player-item:last-child { border-bottom: none; }
-
-        .player-item .pname { flex: 1; }
-
-        .player-item .ptag { font-size: 11px; padding: 2px 7px; border-radius: 10px; }
-
-        .player-item .ptag.owner { background: #e94560; color: white; }
-
-        .player-item .kick-btn {
-
-            background: transparent; color: #555; border: none; font-size: 12px;
-
-            cursor: pointer; padding: 2px 6px; border-radius: 4px;
-
-        }
-
-        .player-item .kick-btn:hover { background: #e94560; color: white; }
-
-        .player-card-info { padding: 10px 16px; font-size: 13px; color: #aaa; }
-
-        .player-card-info p { margin-bottom: 4px; }
-
-        .player-card-info strong { color: #eee; }
-
-        .owner-controls {
-
-            padding: 12px 16px; display: flex; flex-direction: column; gap: 8px;
-
-        }
-
-        .owner-controls input {
-
-            padding: 8px 12px; border: 1px solid #333; border-radius: 6px;
-
-            background: #1a1a2e; color: #eee; font-size: 13px;
-
-        }
-
-        .owner-controls button {
-
-            padding: 8px 12px; border: none; border-radius: 6px;
-
-            background: #1a4a7a; color: #7ec8e3; font-size: 13px; cursor: pointer;
-
-            text-align: center;
-
-        }
-
-        .owner-controls button:hover { background: #1f5a9a; }
-
-        .owner-controls button.danger { background: #7a1a1a; color: #e37e7e; }
-
-        .owner-controls button.danger:hover { background: #9a1f1f; }
-
-        /* Character Card */
-
-        .char-section { margin-bottom: 10px; }
-
-        .char-section-title { color: #e94560; font-weight: bold; font-size: 12px; margin-bottom: 6px; border-bottom: 1px solid #333; padding-bottom: 3px; }
-
-        .char-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-
-        .char-row label { color: #aaa; font-size: 12px; min-width: 50px; }
-
-        .char-row input, .char-row select {
-
-            flex: 1; padding: 4px 8px; border: 1px solid #333; border-radius: 4px;
-
-            background: #1a1a2e; color: #eee; font-size: 12px; max-width: 80px;
-
-        }
-
-        .char-row input:focus { outline: none; border-color: #e94560; }
-
-        .char-row .val { color: #eee; font-size: 13px; font-weight: bold; }
-
-        .char-tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin: 1px 2px; background: #1a4a7a; color: #7ec8e3; }
-
-        .char-tag .remove-tag { cursor: pointer; margin-left: 4px; color: #e94560; }
-
-        .char-add-row { display: flex; gap: 4px; margin-top: 4px; }
-
-        .char-add-row input { flex: 1; padding: 4px 6px; border: 1px solid #333; border-radius: 4px; background: #1a1a2e; color: #eee; font-size: 11px; }
-
-        .char-add-row button { padding: 4px 8px; border: none; border-radius: 4px; background: #333; color: #aaa; font-size: 11px; cursor: pointer; }
-
-        .char-add-row button:hover { background: #e94560; color: white; }
-
-        .btn-save-char { width: 100%; padding: 8px; border: none; border-radius: 6px; background: #2d6a4f; color: #d8f3dc; font-size: 13px; cursor: pointer; margin-top: 8px; }
-
-        .btn-save-char:hover { background: #3d8a6f; }
-
-    </style>
-
-</head>
-
-<body>
-
-
-
-<!-- ========== 登录弹窗 ========== -->
-
-<div id="login-modal" class="modal-overlay">
-
-    <div class="modal-box">
-
-        <h2>🎲 TRPG 跑团系统</h2>
-
-        <div class="modal-tabs">
-
-            <button class="active" onclick="switchTab('login')">加入房间</button>
-
-            <button onclick="switchTab('create')">创建房间</button>
-
-        </div>
-
-
-
-        <!-- 加入房间 -->
-
-        <div id="tab-login" class="tab-content active">
-
-            <input type="text" id="join-name" placeholder="输入你的名字" maxlength="20">
-
-            <input type="number" id="join-room-id" placeholder="输入房间ID" min="1">
-
-            <button onclick="joinRoom()">加入</button>
-
-            <button class="secondary" onclick="enterLobby()">进入大堂 👥 查看所有房间</button>
-
-        </div>
-
-
-
-        <!-- 创建房间 -->
-
-        <div id="tab-create" class="tab-content">
-
-            <input type="text" id="create-name" placeholder="你的名字" maxlength="20">
-
-            <input type="text" id="create-room-name" placeholder="房间名称" maxlength="30">
-
-            <select id="create-rule">
-
-                <option value="COC">COC 7版</option>
-
-                <option value="无限流">无限流</option>
-
-                <option value="DND">D&D 5版</option>
-
-            </select>
-
-            <input type="number" id="create-max" placeholder="人数上限 (2-5)" min="2" max="5" value="5">
-
-            <button onclick="createRoom()">创建房间</button>
-
-            <button class="secondary" onclick="enterLobby()">👈 返回大堂</button>
-
-        </div>
-
-
-
-        <div id="login-status" class="status-msg"></div>
-
-    </div>
-
-</div>
-
-
-
-<!-- ========== 大堂 ========== -->
-
-<div id="lobby-view" class="container" style="display:none">
-
-    <div class="lobby-header">
-
-        <h1>🎲 TRPG 大堂</h1>
-
-        <div>
-
-            <button onclick="refreshRooms()">🔄 刷新</button>
-
-            <button onclick="switchTab('create'); document.getElementById('login-modal').classList.remove('hidden')">+ 创建房间</button>
-
-        </div>
-
-    </div>
-
-    <div id="room-list"></div>
-
-</div>
-
-
-
-<!-- ========== 房间内界面========== -->
-
-<div id="room-view" class="container room-view">
-
-
-
-    <!-- 顶部栏 -->
-
-    <div class="room-topbar">
-
-        <div class="room-title">
-
-            房间: <span id="current-room-name">-</span>
-
-            <span id="current-room-rule" style="font-size:13px;color:#888;margin-left:10px"></span>
-
-        </div>
-
-        <span id="owner-badge" style="display:none;background:#e94560;padding:3px 10px;border-radius:10px;font-size:12px">房主</span>
-
-        <button class="btn-rename" id="btn-rename" onclick="showRename()" style="display:none">✏️ 改名</button>
-
-        <button class="btn-leave" onclick="leaveRoom()">🚪 离开房间</button>
-
-    </div>
-
-
-
-    <div class="room-main">
-
-
-
-        <!-- Center: Chat -->
-
-        <div class="chat-panel">
-
-            <div class="panel-header">📢 公共频道</div>
-
-            <div id="public-messages" class="messages-box"></div>
-
-            <div class="chat-input-area">
-
-                <input type="text" id="public-input" placeholder="输入公共消息..." onkeydown="if(event.key==='Enter')sendPublic()">
-
-                <button id="btn-public-send" onclick="sendPublic()">发送</button>
-
-            </div>
-
-
-
-            <!-- Bottom: Dice + Tasks + Avatar -->
-
-            <div style="display:flex;gap:12px;padding:10px 16px;background:#0f1629;border-top:1px solid #333">
-
-                <!-- Dice -->
-
-                <div style="flex:1.2;min-width:0">
-
-                    <div style="font-size:12px;color:#888;margin-bottom:6px">🎲 骰子</div>
-
-                    <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:6px">
-
-                        <button class="dice-btn" onclick="quickRoll('1d4')">d4</button>
-
-                        <button class="dice-btn" onclick="quickRoll('1d6')">d6</button>
-
-                        <button class="dice-btn" onclick="quickRoll('1d8')">d8</button>
-
-                        <button class="dice-btn" onclick="quickRoll('1d10')">d10</button>
-
-                        <button class="dice-btn" onclick="quickRoll('1d12')">d12</button>
-
-                        <button class="dice-btn" onclick="quickRoll('1d20')">d20</button>
-
-                        <button class="dice-btn" onclick="quickRoll('1d100')">d100</button>
-
-                        <input type="text" id="dice-formula" placeholder="2d6+3" style="width:70px;padding:5px 4px;border-radius:4px;border:1px solid #333;background:#1a1a2e;color:#ccc;font-size:11px">
-
-                        <button onclick="customRoll()" style="padding:5px 8px;border:none;border-radius:4px;background:#e94560;color:#fff;font-size:11px;cursor:pointer">投</button>
-
-                    </div>
-
-                    <!-- Main Quest (blue) -->
-
-                    <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:6px;padding:8px 10px;min-height:80px">
-
-                        <div style="font-size:11px;color:#3498db;font-weight:bold;margin-bottom:4px">主线任务</div>
-
-                        <div id="task-main" style="font-size:12px;color:#aaa;line-height:1.5">暂无主线任务</div>
-
-                    </div>
-
-                </div>
-
-
-
-                <!-- Side Quests (yellow) -->
-
-                <div style="flex:1;min-width:0">
-
-                    <div style="font-size:12px;color:#888;margin-bottom:6px">📋 任务</div>
-
-                    <div style="background:#1a1608;border:1px solid #5c4a00;border-radius:6px;padding:8px 10px;min-height:110px;overflow-y:auto">
-
-                        <div style="font-size:11px;color:#f39c12;font-weight:bold;margin-bottom:4px">支线任务</div>
-
-                        <div id="task-sidequests" style="font-size:12px;color:#aaa;line-height:1.6">暂无支线任务</div>
-
-                    </div>
-
-                </div>
-
-
-
-                <!-- Avatar (green) -->
-
-                <div style="width:140px;text-align:center;flex-shrink:0">
-
-                    <div style="font-size:12px;color:#888;margin-bottom:6px">🧑 形象</div>
-
-                    <div id="avatar-preview" style="width:120px;height:150px;border-radius:8px;background:#0a1a14;display:inline-flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;border:2px solid #27ae60;overflow:hidden" onclick="document.getElementById('avatar-input').click()">👤</div>
-
-                    <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
-
-                    <div id="avatar-name" style="font-size:11px;color:#27ae60;margin-top:4px;font-weight:bold">-</div>
-
-                    <div id="avatar-status" style="font-size:10px;color:#666">点击上传 (建议200x250, 5MB)</div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-
-        <!-- 右侧栏 -->
-
-        <div class="sidebar">
-
-
-
-            <!-- 玩家列表 -->
-
-            <div class="panel-card">
-
-                <h3>👥 玩家列表 (<span id="player-count">0</span>)</h3>
-
-                <div id="player-list"></div>
-
-            </div>
-
-
-
-            <!-- 私聊KP -->
-
-            <div class="panel-card">
-
-                <div class="panel-header">🔒 私聊KP</div>
-
-                <div id="private-messages" class="messages-box" style="max-height:200px"></div>
-
-                <div class="chat-input-area" style="padding:8px">
-
-                    <input type="text" id="private-input" placeholder="私密行动/感知..." onkeydown="if(event.key==='Enter')sendPrivate()">
-
-                    <button onclick="sendPrivate()">发送</button>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- 角色卡 -->
-
-            <div class="panel-card">
-
-                <h3>📋 角色卡<span id="char-rule-tag" style="font-size:11px;color:#888;margin-left:6px"></span></h3>
-
-                <div id="char-card-body" style="padding:12px 16px;font-size:13px">
-
-                    <p style="color:#555">加入房间后显示</p>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- 房主控制（仅房主可见） -->
-
-            <div id="owner-panel" class="panel-card" style="display:none">
-
-                <h3>⚙️ 房主控制</h3>
-
-                <div class="owner-controls">
-
-                    <input type="text" id="rename-input" placeholder="新房间名称">
-
-                    <button onclick="renameRoom()">✏️ 确认改名</button>
-
-                    <button class="danger" onclick="dismissRoom()">🗑️ 解散房间</button>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-
-<script>
-
-// ================================================
-
-// 全局状态
-
-// ================================================
-
-let ws = null;
-
-let currentPlayer = '';
-
-let currentRoomId = null;
-
-let isOwner = false;
-
-let roomInfo = {};
-
-let playersData = [];
-
-
-
-// ================================================
-
-// 标签切换
-
-// ================================================
-
-function switchTab(tab) {
-
-    document.querySelectorAll('.modal-tabs button').forEach((b,i) => {
-
-        b.classList.toggle('active', b.textContent.includes(tab==='login'?'加入':'创建'));
-
-    });
-
-    document.getElementById('tab-login').classList.toggle('active', tab==='login');
-
-    document.getElementById('tab-create').classList.toggle('active', tab==='create');
-
-}
-
-
-
-// ================================================
-
-// 弹窗
-
-// ================================================
-
-function showModal() {
-
-    document.getElementById('login-modal').classList.remove('hidden');
-
-}
-
-function hideModal() {
-
-    document.getElementById('login-modal').classList.add('hidden');
-
-}
-
-
-
-// ================================================
-
-// WebSocket
-
-// ================================================
-
-function connect() {
-
-    ws = new WebSocket('ws://rpm-carefully-distances-interventions.trycloudflare.com');
-
-
-
-    ws.onopen = () => {
-
-        console.log('连接成功');
-
-        // Auto rejoin room if previously in one
-
-        const savedName = localStorage.getItem('trpg_player_name');
-
-        const savedRoom = parseInt(localStorage.getItem('trpg_room_id'));
-
-        if (savedName && savedRoom) {
-
-            currentPlayer = savedName;
-
-            ws.send(JSON.stringify({ type: 'join_room', player_name: savedName, room_id: savedRoom }));
-
-        }
-
-    };
-
-    ws.onclose = () => {
-
-        console.log('连接断开❌?秒后自动重连...');
-
-        setTimeout(connect, 3000);
-
-    };
-
-    ws.onerror = () => {
-
-        console.log('连接错误❌?秒后重试...');
-
-    };
-
-
-
-    ws.onmessage = (event) => {
-
-        const data = JSON.parse(event.data);
-
-        handleMessage(data);
-
-    };
-
-}
-
-
-
-function handleMessage(data) {
-
-    const s = document.getElementById('login-status');
-
-    switch (data.type) {
-
-        case 'room_created':
-
-        case 'join_success':
-
-            isOwner = data.is_owner;
-
-            currentRoomId = data.room.id;
-
-            roomInfo = data.room;
-
-            playersData = data.players || [];
-
-            // Save for auto rejoin after refresh
-
-            localStorage.setItem('trpg_player_name', data.player_name);
-
-            localStorage.setItem('trpg_room_id', data.room.id);
-
-            hideModal();
-
-            enterRoom(data.room, data.player_name, data.messages || []);
-
-            if (data.is_owner) {
-
-                document.getElementById('owner-badge').style.display = 'inline-block';
-
-                document.getElementById('btn-rename').style.display = 'inline-block';
-
-                document.getElementById('owner-panel').style.display = 'block';
-
-            }
-
-            break;
-
-
-
-        case 'error':
-
-            s.textContent = data.message;
-
-            s.style.color = '#e94560';
-
-            break;
-
-
-
-        case 'player_joined':
-
-            addSystemMsg(`🟢 ${data.player_name} 加入了房间`);
-
-            refreshPlayers();
-
-            break;
-
-
-
-        case 'player_left':
-
-            addSystemMsg(`🔴 ${data.player_name} 离开了房间`);
-
-            refreshPlayers();
-
-            break;
-
-
-
-        case 'new_message':
-
-            if (data.message_type === 'public') {
-
-                addPublicMsg(data.sender_name, data.content, 'kp' === data.sender_name.toLowerCase() ? 'kp' : 'public');
-
-            } else {
-
-                addPrivateMsg(data.sender_name, data.content);
-
-            }
-
-            break;
-
-
-
-        case 'player_updated':
-
-            refreshPlayers();
-
-            break;
-
-
-
-        case 'owner_changed':
-
-            if (data.new_owner === currentPlayer) {
-
-                isOwner = true;
-
-                document.getElementById('owner-badge').style.display = 'inline-block';
-
-                document.getElementById('btn-rename').style.display = 'inline-block';
-
-                document.getElementById('owner-panel').style.display = 'block';
-
-                addSystemMsg(`👑 房主转移给?${data.new_owner}`);
-
-            }
-
-            refreshPlayers();
-
-            break;
-
-
-
-        case 'room_renamed':
-
-            roomInfo.name = data.new_name;
-
-            document.getElementById('current-room-name').textContent = data.new_name;
-
-            break;
-
-
-
-        case 'kicked':
-
-            alert('你被移出了房❌? ' + data.message);
-
-            exitRoom();
-
-            showModal();
-
-            break;
-
-
-
-        case 'left_room':
-
-            exitRoom();
-
-            break;
-
-
-
-        case 'kick_success':
-
-            refreshPlayers();
-
-            break;
-
-    }
-
-}
-
-
-
-// ================================================
-
-// 房间操作
-
-// ================================================
-
-function createRoom() {
-
-    const name = document.getElementById('create-name').value.trim();
-
-    const roomName = document.getElementById('create-room-name').value.trim();
-
-    const rule = document.getElementById('create-rule').value;
-
-    const max = parseInt(document.getElementById('create-max').value) || 5;
-
-
-
-    if (!name || !roomName) {
-
-        document.getElementById('login-status').textContent = '请填写名字和房间名称';
-
-        return;
-
-    }
-
-    if (max < 2 || max > 5) {
-
-        document.getElementById('login-status').textContent = '人数需?-5人之❌?;
-
-        return;
-
-    }
-
-
-
-    currentPlayer = name;
-
-    ws.send(JSON.stringify({
-
-        type: 'create_room',
-
-        player_name: name,
-
-        room_name: roomName,
-
-        rule_type: rule,
-
-        max_players: max
-
-    }));
-
-}
-
-
-
-function joinRoom() {
-
-    const name = document.getElementById('join-name').value.trim();
-
-    const roomId = parseInt(document.getElementById('join-room-id').value);
-
-
-
-    if (!name || !roomId) {
-
-        document.getElementById('login-status').textContent = '请填写名字和房间ID';
-
-        return;
-
-    }
-
-
-
-    currentPlayer = name;
-
-    ws.send(JSON.stringify({
-
-        type: 'join_room',
-
-        player_name: name,
-
-        room_id: roomId
-
-    }));
-
-}
-
-
-
-function leaveRoom() {
-
-    if (ws && ws.readyState === WebSocket.OPEN) {
-
-        ws.send(JSON.stringify({ type: 'leave_room' }));
-
-    }
-
-}
-
-
-
-function exitRoom() {
-
-    document.getElementById('room-view').classList.remove('active');
-
-    document.getElementById('lobby-view').style.display = 'none';
-
-    document.getElementById('login-modal').classList.add('hidden');
-
-    currentRoomId = null;
-
-    roomInfo = {};
-
-    playersData = [];
-
-    document.getElementById('public-messages').innerHTML = '';
-
-    document.getElementById('private-messages').innerHTML = '';
-
-    document.getElementById('owner-badge').style.display = 'none';
-
-    document.getElementById('btn-rename').style.display = 'none';
-
-    document.getElementById('owner-panel').style.display = 'none';
-
-    // Clear saved session
-
-    localStorage.removeItem('trpg_player_name');
-
-    localStorage.removeItem('trpg_room_id');
-
-}
-
-
-
-// ================================================
-
-// 大堂
-
-// ================================================
-
-async function enterLobby() {
-
-    hideModal();
-
-    document.getElementById('lobby-view').style.display = 'block';
-
-    document.getElementById('room-view').classList.remove('active');
-
-    refreshRooms();
-
-}
-
-
-
-async function refreshRooms() {
-
-    try {
-
-        const res = await fetch('http://rpm-carefully-distances-interventions.trycloudflare.com/api/rooms');
-
-        const rooms = await res.json();
-
-        renderRoomList(rooms);
-
-    } catch (e) {
-
-        document.getElementById('room-list').innerHTML = '<div class="empty-msg">无法加载房间列表，请确保后端已启❌?/div>';
-
-    }
-
-}
-
-
-
-function renderRoomList(rooms) {
-
-    const container = document.getElementById('room-list');
-
-    if (!rooms || rooms.length === 0) {
-
-        container.innerHTML = '<div class="empty-msg">暂无房间，创建一个吧~</div>';
-
-        return;
-
-    }
-
-    container.innerHTML = '<div class="room-grid">' + rooms.map(r => `
-
-        <div class="room-card">
-
-            <div class="room-name">${escapeHtml(r.name)}</div>
-
-            <div class="room-status ${r.status === 'playing' ? 'playing' : 'waiting'}">${r.status === 'playing' ? '🔴 进行❌? : '🟢 等待❌?}</div>
-
-            <div class="room-info">
-
-                规则: ${r.rule_type} | 人数: ${r.player_count || 0}/${r.max_players} | 房主: ${escapeHtml(r.owner_name)}
-
-            </div>
-
-            <div style="font-size:12px;color:#555;margin-bottom:8px">ID: ${r.id}</div>
-
-            <button ${r.status === 'playing' ? 'disabled title="游戏进行❌?' : ''} onclick="quickJoin(${r.id})">加入房间</button>
-
-        </div>
-
-    `).join('') + '</div>';
-
-}
-
-
-
-function quickJoin(roomId) {
-
-    document.getElementById('join-room-id').value = roomId;
-
-    switchTab('login');
-
-    showModal();
-
-}
-
-
-
-// ================================================
-
-// 进入房间界面
-
-// ================================================
-
-function enterRoom(room, playerName, messages) {
-
-    document.getElementById('lobby-view').style.display = 'none';
-
-    document.getElementById('room-view').classList.add('active');
-
-    document.getElementById('current-room-name').textContent = room.name;
-
-    document.getElementById('current-room-rule').textContent = room.rule_type;
-
-
-
-    // 清空旧消❌?
-
-    document.getElementById('public-messages').innerHTML = '';
-
-    document.getElementById('private-messages').innerHTML = '';
-
-
-
-    // Load history messages
-
-    messages.forEach(msg => {
-
-        if (msg.message_type === 'public') {
-
-            addPublicMsg(msg.sender_name, msg.content,
-
-                msg.sender_name === 'KP' ? 'kp' : 'public');
-
-        } else if (msg.message_type === 'private') {
-
-            // Only show private messages related to current player
-
-            if (msg.sender_name === currentPlayer || msg.target_player === currentPlayer || msg.sender_name === 'KP') {
-
-                addPrivateMsg(msg.sender_name, msg.content);
-
-            }
-
-        }
-
-    });
-
-
-
-    addSystemMsg(`🎲 欢迎来到?{room.name}」！`);
-
-    refreshPlayers();
-
-    loadTasks();
-
-    loadAvatarInfo();
-
-}
-
-
-
-// ================================================
-
-// Dice Rolling
-
-// ================================================
-
-async function quickRoll(formula) {
-
-    if (!currentRoomId) return alert('请先进入房间');
-
-    await doRoll(formula);
-
-}
-
-async function customRoll() {
-
-    const f = document.getElementById('dice-formula').value.trim();
-
-    if (!f) return;
-
-    await doRoll(f);
-
-    document.getElementById('dice-formula').value = '';
-
-}
-
-async function doRoll(formula) {
-
-    try {
-
-        const res = await fetch(`http://rpm-carefully-distances-interventions.trycloudflare.com/api/roll`, {
-
-            method: 'POST',
-
-            headers: { 'Content-Type': 'application/json' },
-
-            body: JSON.stringify({ room_id: currentRoomId, player_name: currentPlayer, formula })
-
-        });
-
-        if (!res.ok) alert('投骰失败');
-
-    } catch (e) { alert('投骰失败: ' + e.message); }
-
-}
-
-
-
-// ================================================
-
-// Tasks
-
-// ================================================
-
-async function loadTasks() {
-
-    if (!currentRoomId) return;
-
-    try {
-
-        const r = await fetch(`http://rpm-carefully-distances-interventions.trycloudflare.com/api/rooms/${currentRoomId}/tasks`);
-
-        const t = await r.json();
-
-        const mainEl = document.getElementById('task-main');
-
-        const sideEl = document.getElementById('task-sidequests');
-
-        if (t.main) { mainEl.textContent = t.main; } else { mainEl.textContent = '暂无主线任务'; }
-
-        if (t.sidequests && t.sidequests.length) {
-
-            sideEl.innerHTML = t.sidequests.map(s => `· ${escapeHtml(s)}`).join('<br>');
-
-        } else { sideEl.textContent = '暂无支线任务'; }
-
-    } catch (e) {}
-
-}
-
-
-
-// ================================================
-
-// Avatar
-
-// ================================================
-
-async function loadAvatarInfo() {
-
-    document.getElementById('avatar-name').textContent = currentPlayer || '-';
-
-    if (currentPlayerData && currentPlayerData.avatar) {
-
-        const preview = document.getElementById('avatar-preview');
-
-        preview.textContent = '';
-
-        preview.style.backgroundImage = `url(${currentPlayerData.avatar})`;
-
-        preview.style.backgroundSize = 'cover';
-
-        preview.style.backgroundPosition = 'center';
-
-    }
-
-}
-
-async function uploadAvatar(fileInput) {
-
-    const file = fileInput.files[0];
-
-    if (!file) return;
-
-    // Validate: max 5MB
-
-    if (file.size > 5 * 1024 * 1024) { alert('图片太大，请控制❌?MB以内'); return; }
-
-    const statusEl = document.getElementById('avatar-status');
-
-    statusEl.textContent = '处理中?..';
-
-    try {
-
-        // Auto-crop and resize to 200x250 using canvas
-
-        const img = await new Promise((resolve, reject) => {
-
-            const i = new Image();
-
-            i.onload = () => resolve(i);
-
-            i.onerror = reject;
-
-            i.src = URL.createObjectURL(file);
-
-        });
-
-        const canvas = document.createElement('canvas');
-
-        canvas.width = 200; canvas.height = 250;
-
-        const ctx = canvas.getContext('2d');
-
-        // Cover crop: fill the whole area, center-cropped
-
-        const imgRatio = img.width / img.height;
-
-        const targetRatio = 200 / 250; // 0.8
-
-        let sx, sy, sw, sh;
-
-        if (imgRatio > targetRatio) {
-
-            // Image is wider - crop sides
-
-            sh = img.height; sw = sh * targetRatio;
-
-            sx = (img.width - sw) / 2; sy = 0;
-
-        } else {
-
-            // Image is taller - crop top/bottom
-
-            sw = img.width; sh = sw / targetRatio;
-
-            sx = 0; sy = (img.height - sh) / 2;
-
-        }
-
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 200, 250);
-
-        URL.revokeObjectURL(img.src);
-
-        // Convert to blob
-
-        const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
-
-        const formData = new FormData();
-
-        formData.append('file', blob, `${currentPlayer || 'avatar'}_${Date.now()}.jpg`);
-
-        formData.append('player_name', currentPlayer);
-
-        formData.append('room_id', currentRoomId);
-
-        statusEl.textContent = '上传中?..';
-
-        const res = await fetch('http://rpm-carefully-distances-interventions.trycloudflare.com/api/avatar/upload', { method: 'POST', body: formData });
-
-        const data = await res.json();
-
-        if (data.url) {
-
-            const preview = document.getElementById('avatar-preview');
-
-            preview.textContent = '';
-
-            preview.style.backgroundImage = `url(${data.url})`;
-
-            preview.style.backgroundSize = 'cover';
-
-            preview.style.backgroundPosition = 'center';
-
-            statusEl.textContent = '❌?上传成功';
-
-        } else { statusEl.textContent = '❌?' + (data.error || data.detail || data.message || '上传失败'); console.error('Upload fail:', data); }
-
-    } catch (e) { statusEl.textContent = '❌?上传失败: ' + e.message; console.error(e); }
-
-}
-
-
-
-// ================================================
-
-// 聊天
-
-// ================================================
-
-function addPublicMsg(sender, text, cls = 'public') {
-
-    const box = document.getElementById('public-messages');
-
-    const div = document.createElement('div');
-
-    div.className = `msg-item ${cls}`;
-
-    const label = cls === 'kp' ? 'KP' : sender;
-
-    div.innerHTML = `<span class="sender">${escapeHtml(label)}:</span>${escapeHtml(text)}`;
-
-    box.appendChild(div);
-
-    box.scrollTop = box.scrollHeight;
-
-}
-
-
-
-function addPrivateMsg(sender, text) {
-
-    const box = document.getElementById('private-messages');
-
-    const div = document.createElement('div');
-
-    div.className = 'msg-item private';
-
-    const label = sender === 'KP' ? 'KP' : sender;
-
-    const colorStyle = sender === 'KP' ? 'color:#2ecc71' : 'color:#9b59b6';
-
-    div.innerHTML = `<span class="sender" style="${colorStyle}">${escapeHtml(label)}:</span>${escapeHtml(text)}`;
-
-    box.appendChild(div);
-
-    box.scrollTop = box.scrollHeight;
-
-}
-
-
-
-function addSystemMsg(text) {
-
-    const box = document.getElementById('public-messages');
-
-    const div = document.createElement('div');
-
-    div.className = 'msg-item system';
-
-    div.textContent = text;
-
-    box.appendChild(div);
-
-    box.scrollTop = box.scrollHeight;
-
-}
-
-
-
-function sendPublic() {
-
-    const input = document.getElementById('public-input');
-
-    const text = input.value.trim();
-
-    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-
-    ws.send(JSON.stringify({ type: 'message', player_name: currentPlayer, content: text, message_type: 'public' }));
-
-    // Don't add locally - backend will broadcast it back
-
-    input.value = '';
-
-}
-
-
-
-function sendPrivate() {
-
-    const input = document.getElementById('private-input');
-
-    let text = input.value.trim();
-
-    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-
-
-
-    // Hidden dice: /暗骰 2d20 or /暗骰 1d100+5
-
-    const hiddenMatch = text.match(/^\/暗骰\s+(.+)/i);
-
-    if (hiddenMatch) {
-
-        const formula = hiddenMatch[1].trim();
-
-        doHiddenRoll(formula);
-
-        input.value = '';
-
-        return;
-
-    }
-
-
-
-    ws.send(JSON.stringify({ type: 'message', player_name: currentPlayer, content: text, message_type: 'private', target_name: 'KP' }));
-
-    addPrivateMsg(currentPlayer, text);
-
-    input.value = '';
-
-}
-
-
-
-async function doHiddenRoll(formula) {
-
-    try {
-
-        const res = await fetch(`http://rpm-carefully-distances-interventions.trycloudflare.com/api/roll`, {
-
-            method: 'POST',
-
-            headers: { 'Content-Type': 'application/json' },
-
-            body: JSON.stringify({ room_id: currentRoomId, player_name: currentPlayer, formula, hidden: true })
-
-        });
-
-        const data = await res.json();
-
-        if (data.ok) {
-
-            // Show result locally with hidden dice style
-
-            addPrivateMsg('🎲 暗骰', `${formula} = ${data.result.total} (${data.result.details.join(', ')})  ❌?只有你和KP能看到`);
-
-        } else {
-
-            addPrivateMsg('系统', '暗骰失败: ' + (data.error || '未知错误'));
-
-        }
-
-    } catch (e) { addPrivateMsg('系统', '暗骰失败: ' + e.message); }
-
-}
-
-
-
-// ================================================
-
-// Player List
-
-// ================================================
-
-async function refreshPlayers() {
-
-    if (!currentRoomId) return;
-
-    try {
-
-        const res = await fetch('http://rpm-carefully-distances-interventions.trycloudflare.com/api/rooms/' + currentRoomId + '/players');
-
-        const data = await res.json();
-
-        if (data && data.length > 0) playersData = data;
-
-        renderPlayers(playersData, roomInfo.owner_name);
-
-    } catch (e) {
-
-        renderPlayers(playersData, roomInfo.owner_name);
-
-    }
-
-}
-
-
-
-function renderPlayers(players, ownerName) {
-
-    const list = document.getElementById('player-list');
-
-    const count = document.getElementById('player-count');
-
-    const safeOwner = ownerName || roomInfo.owner_name;
-
-    count.textContent = players.length;
-
-    list.innerHTML = players.map(p => `
-
-        <div class="player-item">
-
-            <span class="pname">${escapeHtml(p.name)}${p.name === currentPlayer ? ' (❌?' : ''}</span>
-
-            ${p.name === safeOwner ? '<span class="ptag owner">房主</span>' : ''}
-
-            ${isOwner && p.name !== currentPlayer && p.name !== safeOwner ? `<button class="kick-btn" onclick="kickPlayer('${escapeHtml(p.name)}')">❌?/button>` : ''}
-
-        </div>
-
-    `).join('');
-
-
-
-    // Update character card for current player
-
-    const me = players.find(p => p.name === currentPlayer);
-
-    if (me) renderCharCard(me);
-
-}
-
-
-
-function kickPlayer(targetName) {
-
-    if (!confirm(`确定踢出 ${targetName}？`)) return;
-
-    ws.send(JSON.stringify({ type: 'kick_player', target_name: targetName }));
-
-}
-
-
-
-// ================================================
-
-// Character Card (rule-type specific)
-
-// ================================================
-
-let charData = {};
-
-
-
-function renderCharCard(player) {
-
-    const rule = roomInfo.rule_type || 'COC';
-
-    const body = document.getElementById('char-card-body');
-
-    const tag = document.getElementById('char-rule-tag');
-
-    tag.textContent = '[' + rule + ']';
-
-
-
-    try { charData = JSON.parse(player.char_data || '{}'); } catch(e) { charData = {}; }
-
-
-
-    let html = '';
-
-
-
-    // Common: name + role + HP
-
-    html += `<div class="char-row"><label>名字</label><span class="val">${escapeHtml(player.name)}</span></div>`;
-
-    html += `<div class="char-row"><label>职业</label><input id="char-role" value="${escapeHtml(player.role || '')}" placeholder="职业"></div>`;
-
-    html += `<div class="char-row"><label>HP</label><input id="char-hp" type="number" value="${player.hp || 10}" style="max-width:60px"></div>`;
-
-
-
-    if (rule === 'COC') {
-
-        html += `<div class="char-section"><div class="char-section-title">属❌?/div>`;
-
-        const attrs = ['STR','DEX','CON','APP','POW','SIZ','INT','EDU'];
-
-        attrs.forEach(a => {
-
-            html += `<div class="char-row"><label>${a}</label><input id="char-${a}" type="number" value="${charData[a] || ''}" placeholder="0" style="max-width:60px"></div>`;
-
-        });
-
-        html += `</div>`;
-
-        html += `<div class="char-section"><div class="char-section-title">SAN</div>`;
-
-        html += `<div class="char-row"><label>SAN</label><input id="char-SAN" type="number" value="${charData.SAN || ''}" placeholder="0" style="max-width:60px"></div>`;
-
-        html += `</div>`;
-
-        html += renderTagList('skills', '技❌?);
-
-    } else if (rule === 'DND') {
-
-        html += `<div class="char-section"><div class="char-section-title">属❌?/div>`;
-
-        const attrs = ['STR','DEX','CON','INT','WIS','CHA'];
-
-        attrs.forEach(a => {
-
-            html += `<div class="char-row"><label>${a}</label><input id="char-${a}" type="number" value="${charData[a] || ''}" placeholder="0" style="max-width:60px"></div>`;
-
-        });
-
-        html += `</div>`;
-
-        html += `<div class="char-row"><label>AC</label><input id="char-AC" type="number" value="${charData.AC || ''}" placeholder="0" style="max-width:60px"></div>`;
-
-        html += renderTagList('spells', '法术');
-
-        html += renderTagList('features', '特❌?);
-
-    } else if (rule === '无限流) {
-
-        html += `<div class="char-section"><div class="char-section-title">属❌?/div>`;
-
-        const attrs = ['STR','DEX','CON','INT','WIS','CHA'];
-
-        attrs.forEach(a => {
-
-            html += `<div class="char-row"><label>${a}</label><input id="char-${a}" type="number" value="${charData[a] || ''}" placeholder="0" style="max-width:60px"></div>`;
-
-        });
-
-        html += `</div>`;
-
-        html += `<div class="char-row"><label>积分</label><input id="char-points" type="number" value="${charData.points || ''}" placeholder="0" style="max-width:80px"></div>`;
-
-        html += renderTagList('skills', '技❌?);
-
-        html += renderTagList('items', '随身道具');
-
-        html += renderTagList('equipment', '装备');
-
-    }
-
-
-
-    html += `<button class="btn-save-char" onclick="saveCharCard()">💾 保存角色?/button>`;
-
-    body.innerHTML = html;
-
-}
-
-
-
-function renderTagList(key, label) {
-
-    const tags = charData[key] || [];
-
-    let html = `<div class="char-section"><div class="char-section-title">${label}</div>`;
-
-    tags.forEach((t, i) => {
-
-        html += `<span class="char-tag">${escapeHtml(t)}<span class="remove-tag" onclick="removeTag('${key}',${i})">❌?/span></span>`;
-
-    });
-
-    html += `<div class="char-add-row"><input id="add-${key}" placeholder="+ ${label}"><button onclick="addTag('${key}')">添加</button></div>`;
-
-    html += `</div>`;
-
-    return html;
-
-}
-
-
-
-function addTag(key) {
-
-    const input = document.getElementById('add-' + key);
-
-    const val = input.value.trim();
-
-    if (!val) return;
-
-    if (!charData[key]) charData[key] = [];
-
-    charData[key].push(val);
-
-    const me = playersData.find(p => p.name === currentPlayer);
-
-    if (me) renderCharCard(me);
-
-}
-
-
-
-function removeTag(key, index) {
-
-    if (charData[key]) charData[key].splice(index, 1);
-
-    const me = playersData.find(p => p.name === currentPlayer);
-
-    if (me) renderCharCard(me);
-
-}
-
-
-
-function saveCharCard() {
-
-    const rule = roomInfo.rule_type || 'COC';
-
-    const data = {};
-
-
-
-    // Collect rule-specific attrs
-
-    if (rule === 'COC') {
-
-        ['STR','DEX','CON','APP','POW','SIZ','INT','EDU','SAN'].forEach(a => {
-
-            const el = document.getElementById('char-' + a);
-
-            if (el && el.value) data[a] = parseInt(el.value) || 0;
-
-        });
-
-        data.skills = charData.skills || [];
-
-    } else if (rule === 'DND') {
-
-        ['STR','DEX','CON','INT','WIS','CHA','AC'].forEach(a => {
-
-            const el = document.getElementById('char-' + a);
-
-            if (el && el.value) data[a] = parseInt(el.value) || 0;
-
-        });
-
-        data.spells = charData.spells || [];
-
-        data.features = charData.features || [];
-
-    } else if (rule === '无限流) {
-
-        ['STR','DEX','CON','INT','WIS','CHA'].forEach(a => {
-
-            const el = document.getElementById('char-' + a);
-
-            if (el && el.value) data[a] = parseInt(el.value) || 0;
-
-        });
-
-        const pEl = document.getElementById('char-points');
-
-        if (pEl && pEl.value) data.points = parseInt(pEl.value) || 0;
-
-        data.skills = charData.skills || [];
-
-        data.items = charData.items || [];
-
-        data.equipment = charData.equipment || [];
-
-    }
-
-
-
-    const role = document.getElementById('char-role')?.value || '';
-
-    const hp = document.getElementById('char-hp')?.value || '10';
-
-
-
-    ws.send(JSON.stringify({
-
-        type: 'update_character',
-
-        player_name: currentPlayer,
-
-        role, hp, status: 'online',
-
-        char_data: JSON.stringify(data)
-
-    }));
-
-
-
-    addSystemMsg('❌?角色卡已保存');
-
-}
-
-
-
-// ================================================
-
-// Owner Controls
-
-// ================================================
-
-function showRename() {
-
-    const input = document.getElementById('rename-input');
-
-    input.style.display = input.style.display === 'none' ? 'block' : 'none';
-
-    if (input.style.display === 'block') input.focus();
-
-}
-
-
-
-function renameRoom() {
-
-    const newName = document.getElementById('rename-input').value.trim();
-
-    if (!newName) return;
-
-    ws.send(JSON.stringify({ type: 'rename_room', new_name: newName }));
-
-    document.getElementById('rename-input').value = '';
-
-    document.getElementById('rename-input').style.display = 'none';
-
-}
-
-
-
-function dismissRoom() {
-
-    if (!confirm('解散房间将清空所有聊天记录，确定解散吗?)) return;
-
-    ws.send(JSON.stringify({ type: 'dismiss_room' }));
-
-    exitRoom();
-
-    showModal();
-
-}
-
-
-
-// ================================================
-
-// 工具
-
-// ================================================
-
-function escapeHtml(str) {
-
-    if (!str) return '';
-
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-}
-
-
-
-// ================================================
-
-// 初始化
-
-// ================================================
-
-connect();
-
-</script>
-
-</body>
-
-</html>
-
+﻿<!DOCTYPE html>
+
+
+
+<html lang="zh-CN">
+
+
+
+<head>
+
+
+
+    <meta charset="UTF-8">
+
+
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+    <title>TRPG 跑团系统</title>
+
+
+
+    <link rel="stylesheet" href="css/style.css">
+
+
+
+    <style>
+
+
+
+        /* ========== 全局 ========== */
+
+
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+
+        body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
+
+
+
+
+
+
+
+        /* ========== 登录弹窗 ========== */
+
+
+
+        .modal-overlay {
+
+
+
+            position: fixed; inset: 0;
+
+
+
+            background: rgba(0,0,0,0.7);
+
+
+
+            display: flex; align-items: center; justify-content: center;
+
+
+
+            z-index: 1000;
+
+
+
+        }
+
+
+
+        .modal-overlay.hidden { display: none; }
+
+
+
+        .modal-box {
+
+
+
+            background: #16213e; border-radius: 12px; padding: 32px;
+
+
+
+            width: 420px; max-width: 90vw;
+
+
+
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+
+
+
+        }
+
+
+
+        .modal-box h2 { text-align: center; margin-bottom: 24px; color: #e94560; }
+
+
+
+        .modal-box input, .modal-box select {
+
+
+
+            width: 100%; padding: 12px; margin-bottom: 14px;
+
+
+
+            border: 1px solid #333; border-radius: 8px;
+
+
+
+            background: #1a1a2e; color: #eee; font-size: 15px;
+
+
+
+        }
+
+
+
+        .modal-box button {
+
+
+
+            width: 100%; padding: 12px; border: none; border-radius: 8px;
+
+
+
+            background: #e94560; color: white; font-size: 16px;
+
+
+
+            cursor: pointer; margin-bottom: 10px;
+
+
+
+            transition: background 0.2s;
+
+
+
+        }
+
+
+
+        .modal-box button:hover { background: #d63050; }
+
+
+
+        .modal-box button.secondary {
+
+
+
+            background: #333; color: #aaa; font-size: 14px;
+
+
+
+        }
+
+
+
+        .modal-box button.secondary:hover { background: #444; }
+
+
+
+        .modal-tabs {
+
+
+
+            display: flex; margin-bottom: 20px;
+
+
+
+        }
+
+
+
+        .modal-tabs button {
+
+
+
+            flex: 1; background: transparent; border-bottom: 2px solid transparent;
+
+
+
+            color: #888; font-size: 15px; padding: 8px;
+
+
+
+        }
+
+
+
+        .modal-tabs button.active {
+
+
+
+            border-bottom-color: #e94560; color: #eee;
+
+
+
+        }
+
+
+
+        .tab-content { display: none; }
+
+
+
+        .tab-content.active { display: block; }
+
+
+
+        .status-msg { text-align: center; color: #888; font-size: 13px; margin-top: 8px; min-height: 18px; }
+
+
+
+
+
+
+
+        /* ========== 主容器========== */
+
+
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+
+
+
+
+
+
+        /* ========== 大堂 ========== */
+
+
+
+        .lobby-header {
+
+
+
+            display: flex; align-items: center; justify-content: space-between;
+
+
+
+            margin-bottom: 20px;
+
+
+
+        }
+
+
+
+        .lobby-header h1 { color: #e94560; }
+
+
+
+        .lobby-header button {
+
+
+
+            padding: 10px 24px; background: #e94560; border: none;
+
+
+
+            border-radius: 8px; color: white; font-size: 15px; cursor: pointer;
+
+
+
+        }
+
+
+
+        .lobby-header button:hover { background: #d63050; }
+
+
+
+
+
+
+
+        /* 房间卡片网格 */
+
+
+
+        .room-grid {
+
+
+
+            display: grid;
+
+
+
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+
+
+
+            gap: 16px;
+
+
+
+        }
+
+
+
+        .room-card {
+
+
+
+            background: #16213e; border-radius: 12px; padding: 20px;
+
+
+
+            border: 1px solid #333;
+
+
+
+            transition: transform 0.2s, border-color 0.2s;
+
+
+
+        }
+
+
+
+        .room-card:hover { transform: translateY(-2px); border-color: #e94560; }
+
+
+
+        .room-card .room-name { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #eee; }
+
+
+
+        .room-card .room-info { font-size: 13px; color: #888; margin-bottom: 12px; }
+
+
+
+        .room-card .room-status {
+
+
+
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+
+
+
+            font-size: 12px; margin-bottom: 12px;
+
+
+
+        }
+
+
+
+        .room-card .room-status.waiting { background: #2d6a4f; color: #d8f3dc; }
+
+
+
+        .room-card .room-status.playing { background: #b5179e; color: #f0abfc; }
+
+
+
+        .room-card button {
+
+
+
+            width: 100%; padding: 10px; border: none; border-radius: 8px;
+
+
+
+            background: #e94560; color: white; font-size: 14px; cursor: pointer;
+
+
+
+        }
+
+
+
+        .room-card button:hover { background: #d63050; }
+
+
+
+        .room-card button:disabled { background: #333; color: #555; cursor: not-allowed; }
+
+
+
+        .empty-msg { text-align: center; color: #555; padding: 60px; font-size: 16px; }
+
+
+
+
+
+
+
+        /* ========== 房间内界面========== */
+
+
+
+        .room-view { display: none; }
+
+
+
+        .room-view.active { display: block; }
+
+
+
+        .room-topbar {
+
+
+
+            display: flex; align-items: center; gap: 12px;
+
+
+
+            margin-bottom: 16px; background: #16213e;
+
+
+
+            padding: 12px 20px; border-radius: 10px;
+
+
+
+        }
+
+
+
+        .room-topbar .room-title { font-size: 18px; font-weight: bold; flex: 1; }
+
+
+
+        .room-topbar .room-title span { color: #e94560; }
+
+
+
+        .room-topbar button {
+
+
+
+            padding: 8px 16px; border: none; border-radius: 6px;
+
+
+
+            font-size: 13px; cursor: pointer;
+
+
+
+        }
+
+
+
+        .room-topbar .btn-leave { background: #333; color: #aaa; }
+
+
+
+        .room-topbar .btn-leave:hover { background: #444; }
+
+
+
+        .room-topbar .btn-rename { background: #1a4a7a; color: #7ec8e3; }
+
+
+
+        .room-main {
+
+
+
+            display: grid;
+
+
+
+            grid-template-columns: 1fr 260px;
+
+
+
+            gap: 16px;
+
+
+
+        }
+
+
+
+        @media (max-width: 700px) {
+
+
+
+            .room-main { grid-template-columns: 1fr; }
+
+
+
+        }
+
+
+
+
+
+
+
+        /* 聊天区*/
+
+
+
+        .chat-panel {
+
+
+
+            background: #16213e; border-radius: 12px; overflow: hidden;
+
+
+
+            display: flex; flex-direction: column;
+
+
+
+        }
+
+
+
+        .panel-header {
+
+
+
+            padding: 12px 16px; background: #1a1a2e;
+
+
+
+            border-bottom: 1px solid #333; font-size: 14px; color: #888;
+
+
+
+        }
+
+
+
+        .messages-box {
+
+
+
+            flex: 1; min-height: 400px; max-height: 60vh;
+
+
+
+            overflow-y: auto; padding: 16px;
+
+
+
+        }
+
+
+
+        .msg-item {
+
+
+
+            margin-bottom: 12px; padding: 10px 14px; border-radius: 10px;
+
+
+
+            line-height: 1.6; font-size: 14px;
+
+
+
+        }
+
+
+
+        .msg-item.public { background: #1f2f4a; }
+
+
+
+        .msg-item.private { background: #2a1f4a; border-left: 3px solid #9b59b6; }
+
+
+
+        .msg-item.kp { background: #0d3b2e; border-left: 3px solid #2ecc71; }
+
+
+
+        .msg-item.system { background: #2a2a1a; color: #aaa; font-size: 13px; text-align: center; }
+
+
+
+        .msg-item .sender { color: #e94560; font-weight: bold; margin-right: 6px; }
+
+
+
+        .msg-item.kp .sender { color: #2ecc71; }
+
+
+
+        .chat-input-area {
+
+
+
+            display: flex; gap: 8px; padding: 12px; background: #1a1a2e;
+
+
+
+            border-top: 1px solid #333;
+
+
+
+        }
+
+
+
+        .chat-input-area input {
+
+
+
+            flex: 1; padding: 10px 14px; border: 1px solid #333;
+
+
+
+            border-radius: 8px; background: #16213e; color: #eee; font-size: 14px;
+
+
+
+        }
+
+
+
+        .chat-input-area input:focus { outline: none; border-color: #e94560; }
+
+
+
+        .chat-input-area button {
+
+
+
+            padding: 10px 20px; border: none; border-radius: 8px;
+
+
+
+            background: #e94560; color: white; font-size: 14px; cursor: pointer;
+
+
+
+        }
+
+
+
+        .chat-input-area button:hover { background: #d63050; }
+
+
+
+        .chat-input-area button:disabled { background: #333; color: #555; cursor: not-allowed; }
+
+
+
+
+
+
+
+        /* 右侧栏*/
+
+
+
+        .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+
+
+        .panel-card {
+
+
+
+            background: #16213e; border-radius: 12px; overflow: hidden;
+
+
+
+        }
+
+
+
+        .dice-btn {
+
+
+
+            width: 44px; padding: 8px 0; border: none; border-radius: 6px;
+
+
+
+            background: #1a1a2e; color: #e94560; font-size: 13px;
+
+
+
+            font-weight: bold; cursor: pointer;
+
+
+
+            border: 1px solid #e94560;
+
+
+
+        }
+
+
+
+        .dice-btn:hover { background: #e94560; color: #fff; }
+
+
+
+        .sidebar#left-sidebar { gap: 10px; }
+
+
+
+        .sidebar#left-sidebar .panel-card h3 { padding: 10px 12px; font-size: 13px; }
+
+
+
+        .player-item {
+
+
+
+            padding: 10px 16px; border-bottom: 1px solid #222;
+
+
+
+            display: flex; align-items: center; gap: 8px;
+
+
+
+            font-size: 14px;
+
+
+
+        }
+
+
+
+        .player-item:last-child { border-bottom: none; }
+
+
+
+        .player-item .pname { flex: 1; }
+
+
+
+        .player-item .ptag { font-size: 11px; padding: 2px 7px; border-radius: 10px; }
+
+
+
+        .player-item .ptag.owner { background: #e94560; color: white; }
+
+
+
+        .player-item .kick-btn {
+
+
+
+            background: transparent; color: #555; border: none; font-size: 12px;
+
+
+
+            cursor: pointer; padding: 2px 6px; border-radius: 4px;
+
+
+
+        }
+
+
+
+        .player-item .kick-btn:hover { background: #e94560; color: white; }
+
+
+
+        .player-card-info { padding: 10px 16px; font-size: 13px; color: #aaa; }
+
+
+
+        .player-card-info p { margin-bottom: 4px; }
+
+
+
+        .player-card-info strong { color: #eee; }
+
+
+
+        .owner-controls {
+
+
+
+            padding: 12px 16px; display: flex; flex-direction: column; gap: 8px;
+
+
+
+        }
+
+
+
+        .owner-controls input {
+
+
+
+            padding: 8px 12px; border: 1px solid #333; border-radius: 6px;
+
+
+
+            background: #1a1a2e; color: #eee; font-size: 13px;
+
+
+
+        }
+
+
+
+        .owner-controls button {
+
+
+
+            padding: 8px 12px; border: none; border-radius: 6px;
+
+
+
+            background: #1a4a7a; color: #7ec8e3; font-size: 13px; cursor: pointer;
+
+
+
+            text-align: center;
+
+
+
+        }
+
+
+
+        .owner-controls button:hover { background: #1f5a9a; }
+
+
+
+        .owner-controls button.danger { background: #7a1a1a; color: #e37e7e; }
+
+
+
+        .owner-controls button.danger:hover { background: #9a1f1f; }
+
+
+
+        /* Character Card */
+
+
+
+        .char-section { margin-bottom: 10px; }
+
+
+
+        .char-section-title { color: #e94560; font-weight: bold; font-size: 12px; margin-bottom: 6px; border-bottom: 1px solid #333; padding-bottom: 3px; }
+
+
+
+        .char-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+
+
+
+        .char-row label { color: #aaa; font-size: 12px; min-width: 50px; }
+
+
+
+        .char-row input, .char-row select {
+
+
+
+            flex: 1; padding: 4px 8px; border: 1px solid #333; border-radius: 4px;
+
+
+
+            background: #1a1a2e; color: #eee; font-size: 12px; max-width: 80px;
+
+
+
+        }
+
+
+
+        .char-row input:focus { outline: none; border-color: #e94560; }
+
+
+
+        .char-row .val { color: #eee; font-size: 13px; font-weight: bold; }
+
+
+
+        .char-tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin: 1px 2px; background: #1a4a7a; color: #7ec8e3; }
+
+
+
+        .char-tag .remove-tag { cursor: pointer; margin-left: 4px; color: #e94560; }
+
+
+
+        .char-add-row { display: flex; gap: 4px; margin-top: 4px; }
+
+
+
+        .char-add-row input { flex: 1; padding: 4px 6px; border: 1px solid #333; border-radius: 4px; background: #1a1a2e; color: #eee; font-size: 11px; }
+
+
+
+        .char-add-row button { padding: 4px 8px; border: none; border-radius: 4px; background: #333; color: #aaa; font-size: 11px; cursor: pointer; }
+
+
+
+        .char-add-row button:hover { background: #e94560; color: white; }
+
+
+
+        .btn-save-char { width: 100%; padding: 8px; border: none; border-radius: 6px; background: #2d6a4f; color: #d8f3dc; font-size: 13px; cursor: pointer; margin-top: 8px; }
+
+
+
+        .btn-save-char:hover { background: #3d8a6f; }
+
+
+
+    </style>
+
+
+
+</head>
+
+
+
+<body>
+
+
+
+
+
+
+
+<!-- ========== 登录弹窗 ========== -->
+
+
+
+<div id="login-modal" class="modal-overlay">
+
+
+
+    <div class="modal-box">
+
+
+
+        <h2>🎲 TRPG 跑团系统</h2>
+
+
+
+        <div class="modal-tabs">
+
+
+
+            <button class="active" onclick="switchTab('login')">加入房间</button>
+
+
+
+            <button onclick="switchTab('create')">创建房间</button>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- 加入房间 -->
+
+
+
+        <div id="tab-login" class="tab-content active">
+
+
+
+            <input type="text" id="join-name" placeholder="输入你的名字" maxlength="20">
+
+
+
+            <input type="number" id="join-room-id" placeholder="输入房间ID" min="1">
+
+
+
+            <button onclick="joinRoom()">加入</button>
+
+
+
+            <button class="secondary" onclick="enterLobby()">进入大堂 👥 查看所有房间</button>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- 创建房间 -->
+
+
+
+        <div id="tab-create" class="tab-content">
+
+
+
+            <input type="text" id="create-name" placeholder="你的名字" maxlength="20">
+
+
+
+            <input type="text" id="create-room-name" placeholder="房间名称" maxlength="30">
+
+
+
+            <select id="create-rule">
+
+
+
+                <option value="COC">COC 7版</option>
+
+
+
+                <option value="无限流">无限流</option>
+
+
+
+                <option value="DND">D&D 5版</option>
+
+
+
+            </select>
+
+
+
+            <input type="number" id="create-max" placeholder="人数上限 (2-5)" min="2" max="5" value="5">
+
+
+
+            <button onclick="createRoom()">创建房间</button>
+
+
+
+            <button class="secondary" onclick="enterLobby()">👈 返回大堂</button>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <div id="login-status" class="status-msg"></div>
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+
+
+
+
+<!-- ========== 大堂 ========== -->
+
+
+
+<div id="lobby-view" class="container" style="display:none">
+
+
+
+    <div class="lobby-header">
+
+
+
+        <h1>🎲 TRPG 大堂</h1>
+
+
+
+        <div>
+
+
+
+            <button onclick="refreshRooms()">🔄 刷新</button>
+
+
+
+            <button onclick="switchTab('create'); document.getElementById('login-modal').classList.remove('hidden')">+ 创建房间</button>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+    <div id="room-list"></div>
+
+
+
+</div>
+
+
+
+
+
+
+
+<!-- ========== 房间内界面========== -->
+
+
+
+<div id="room-view" class="container room-view">
+
+
+
+
+
+
+
+    <!-- 顶部栏 -->
+
+
+
+    <div class="room-topbar">
+
+
+
+        <div class="room-title">
+
+
+
+            房间: <span id="current-room-name">-</span>
+
+
+
+            <span id="current-room-rule" style="font-size:13px;color:#888;margin-left:10px"></span>
+
+
+
+        </div>
+
+
+
+        <span id="owner-badge" style="display:none;background:#e94560;padding:3px 10px;border-radius:10px;font-size:12px">房主</span>
+
+
+
+        <button class="btn-rename" id="btn-rename" onclick="showRename()" style="display:none">✏️ 改名</button>
+
+
+
+        <button class="btn-leave" onclick="leaveRoom()">🚪 离开房间</button>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <div class="room-main">
+
+
+
+
+
+
+
+        <!-- Center: Chat -->
+
+
+
+        <div class="chat-panel">
+
+
+
+            <div class="panel-header">📢 公共频道</div>
+
+
+
+            <div id="public-messages" class="messages-box"></div>
+
+
+
+            <div class="chat-input-area">
+
+
+
+                <input type="text" id="public-input" placeholder="输入公共消息..." onkeydown="if(event.key==='Enter')sendPublic()">
+
+
+
+                <button id="btn-public-send" onclick="sendPublic()">发送</button>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- Bottom: Dice + Tasks + Avatar -->
+
+
+
+            <div style="display:flex;gap:12px;padding:10px 16px;background:#0f1629;border-top:1px solid #333">
+
+
+
+                <!-- Dice -->
+
+
+
+                <div style="flex:1.2;min-width:0">
+
+
+
+                    <div style="font-size:12px;color:#888;margin-bottom:6px">🎲 骰子</div>
+
+
+
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:6px">
+
+
+
+                        <button class="dice-btn" onclick="quickRoll('1d4')">d4</button>
+
+
+
+                        <button class="dice-btn" onclick="quickRoll('1d6')">d6</button>
+
+
+
+                        <button class="dice-btn" onclick="quickRoll('1d8')">d8</button>
+
+
+
+                        <button class="dice-btn" onclick="quickRoll('1d10')">d10</button>
+
+
+
+                        <button class="dice-btn" onclick="quickRoll('1d12')">d12</button>
+
+
+
+                        <button class="dice-btn" onclick="quickRoll('1d20')">d20</button>
+
+
+
+                        <button class="dice-btn" onclick="quickRoll('1d100')">d100</button>
+
+
+
+                        <input type="text" id="dice-formula" placeholder="2d6+3" style="width:70px;padding:5px 4px;border-radius:4px;border:1px solid #333;background:#1a1a2e;color:#ccc;font-size:11px">
+
+
+
+                        <button onclick="customRoll()" style="padding:5px 8px;border:none;border-radius:4px;background:#e94560;color:#fff;font-size:11px;cursor:pointer">投</button>
+
+
+
+                    </div>
+
+
+
+                    <!-- Main Quest (blue) -->
+
+
+
+                    <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:6px;padding:8px 10px;min-height:80px">
+
+
+
+                        <div style="font-size:11px;color:#3498db;font-weight:bold;margin-bottom:4px">主线任务</div>
+
+
+
+                        <div id="task-main" style="font-size:12px;color:#aaa;line-height:1.5">暂无主线任务</div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+                <!-- Side Quests (yellow) -->
+
+
+
+                <div style="flex:1;min-width:0">
+
+
+
+                    <div style="font-size:12px;color:#888;margin-bottom:6px">📋 任务</div>
+
+
+
+                    <div style="background:#1a1608;border:1px solid #5c4a00;border-radius:6px;padding:8px 10px;min-height:110px;overflow-y:auto">
+
+
+
+                        <div style="font-size:11px;color:#f39c12;font-weight:bold;margin-bottom:4px">支线任务</div>
+
+
+
+                        <div id="task-sidequests" style="font-size:12px;color:#aaa;line-height:1.6">暂无支线任务</div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+                <!-- Avatar (green) -->
+
+
+
+                <div style="width:140px;text-align:center;flex-shrink:0">
+
+
+
+                    <div style="font-size:12px;color:#888;margin-bottom:6px">🧑 形象</div>
+
+
+
+                    <div id="avatar-preview" style="width:120px;height:150px;border-radius:8px;background:#0a1a14;display:inline-flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;border:2px solid #27ae60;overflow:hidden" onclick="document.getElementById('avatar-input').click()">👤</div>
+
+
+
+                    <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
+
+
+
+                    <div id="avatar-name" style="font-size:11px;color:#27ae60;margin-top:4px;font-weight:bold">-</div>
+
+
+
+                    <div id="avatar-status" style="font-size:10px;color:#666">点击上传 (建议200x250, 5MB)</div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- 右侧栏 -->
+
+
+
+        <div class="sidebar">
+
+
+
+
+
+
+
+            <!-- 玩家列表 -->
+
+
+
+            <div class="panel-card">
+
+
+
+                <h3>👥 玩家列表 (<span id="player-count">0</span>)</h3>
+
+
+
+                <div id="player-list"></div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- 私聊KP -->
+
+
+
+            <div class="panel-card">
+
+
+
+                <div class="panel-header">🔒 私聊KP</div>
+
+
+
+                <div id="private-messages" class="messages-box" style="max-height:200px"></div>
+
+
+
+                <div class="chat-input-area" style="padding:8px">
+
+
+
+                    <input type="text" id="private-input" placeholder="私密行动/感知..." onkeydown="if(event.key==='Enter')sendPrivate()">
+
+
+
+                    <button onclick="sendPrivate()">发送</button>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- 角色卡 -->
+
+
+
+            <div class="panel-card">
+
+
+
+                <h3>📋 角色卡<span id="char-rule-tag" style="font-size:11px;color:#888;margin-left:6px"></span></h3>
+
+
+
+                <div id="char-card-body" style="padding:12px 16px;font-size:13px">
+
+
+
+                    <p style="color:#555">加入房间后显示</p>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- 房主控制（仅房主可见） -->
+
+
+
+            <div id="owner-panel" class="panel-card" style="display:none">
+
+
+
+                <h3>⚙️ 房主控制</h3>
+
+
+
+                <div class="owner-controls">
+
+
+
+                    <input type="text" id="rename-input" placeholder="新房间名称">
+
+
+
+                    <button onclick="renameRoom()">✏️ 确认改名</button>
+
+
+
+                    <button class="danger" onclick="dismissRoom()">🗑️ 解散房间</button>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+
+
+
+
+<script>
+
+
+
+// ================================================
+
+
+
+// 全局状态
+
+
+
+// ================================================
+
+
+
+let ws = null;
+
+
+
+let currentPlayer = '';
+
+
+
+let currentRoomId = null;
+
+
+
+let isOwner = false;
+
+
+
+let roomInfo = {};
+
+
+
+let playersData = [];
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// 标签切换
+
+
+
+// ================================================
+
+
+
+function switchTab(tab) {
+
+
+
+    document.querySelectorAll('.modal-tabs button').forEach((b,i) => {
+
+
+
+        b.classList.toggle('active', b.textContent.includes(tab==='login'?'加入':'创建'));
+
+
+
+    });
+
+
+
+    document.getElementById('tab-login').classList.toggle('active', tab==='login');
+
+
+
+    document.getElementById('tab-create').classList.toggle('active', tab==='create');
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// 弹窗
+
+
+
+// ================================================
+
+
+
+function showModal() {
+
+
+
+    document.getElementById('login-modal').classList.remove('hidden');
+
+
+
+}
+
+
+
+function hideModal() {
+
+
+
+    document.getElementById('login-modal').classList.add('hidden');
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// WebSocket
+
+
+
+// ================================================
+
+
+
+function connect() {
+
+
+
+    ws = new WebSocket('ws://recognize-charitable-nylon-solving.trycloudflare.com');
+
+
+
+
+
+
+
+    ws.onopen = () => {
+
+
+
+        console.log('连接成功');
+
+
+
+        // Auto rejoin room if previously in one
+
+
+
+        const savedName = localStorage.getItem('trpg_player_name');
+
+
+
+        const savedRoom = parseInt(localStorage.getItem('trpg_room_id'));
+
+
+
+        if (savedName && savedRoom) {
+
+
+
+            currentPlayer = savedName;
+
+
+
+            ws.send(JSON.stringify({ type: 'join_room', player_name: savedName, room_id: savedRoom }));
+
+
+
+        }
+
+
+
+    };
+
+
+
+    ws.onclose = () => {
+
+
+
+        console.log('连接断开❌?秒后自动重连...');
+
+
+
+        setTimeout(connect, 3000);
+
+
+
+    };
+
+
+
+    ws.onerror = () => {
+
+
+
+        console.log('连接错误❌?秒后重试...');
+
+
+
+    };
+
+
+
+
+
+
+
+    ws.onmessage = (event) => {
+
+
+
+        const data = JSON.parse(event.data);
+
+
+
+        handleMessage(data);
+
+
+
+    };
+
+
+
+}
+
+
+
+
+
+
+
+function handleMessage(data) {
+
+
+
+    const s = document.getElementById('login-status');
+
+
+
+    switch (data.type) {
+
+
+
+        case 'room_created':
+
+
+
+        case 'join_success':
+
+
+
+            isOwner = data.is_owner;
+
+
+
+            currentRoomId = data.room.id;
+
+
+
+            roomInfo = data.room;
+
+
+
+            playersData = data.players || [];
+
+
+
+            // Save for auto rejoin after refresh
+
+
+
+            localStorage.setItem('trpg_player_name', data.player_name);
+
+
+
+            localStorage.setItem('trpg_room_id', data.room.id);
+
+
+
+            hideModal();
+
+
+
+            enterRoom(data.room, data.player_name, data.messages || []);
+
+
+
+            if (data.is_owner) {
+
+
+
+                document.getElementById('owner-badge').style.display = 'inline-block';
+
+
+
+                document.getElementById('btn-rename').style.display = 'inline-block';
+
+
+
+                document.getElementById('owner-panel').style.display = 'block';
+
+
+
+            }
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'error':
+
+
+
+            s.textContent = data.message;
+
+
+
+            s.style.color = '#e94560';
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'player_joined':
+
+
+
+            addSystemMsg(`🟢 ${data.player_name} 加入了房间`);
+
+
+
+            refreshPlayers();
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'player_left':
+
+
+
+            addSystemMsg(`🔴 ${data.player_name} 离开了房间`);
+
+
+
+            refreshPlayers();
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'new_message':
+
+
+
+            if (data.message_type === 'public') {
+
+
+
+                addPublicMsg(data.sender_name, data.content, 'kp' === data.sender_name.toLowerCase() ? 'kp' : 'public');
+
+
+
+            } else {
+
+
+
+                addPrivateMsg(data.sender_name, data.content);
+
+
+
+            }
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'player_updated':
+
+
+
+            refreshPlayers();
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'owner_changed':
+
+
+
+            if (data.new_owner === currentPlayer) {
+
+
+
+                isOwner = true;
+
+
+
+                document.getElementById('owner-badge').style.display = 'inline-block';
+
+
+
+                document.getElementById('btn-rename').style.display = 'inline-block';
+
+
+
+                document.getElementById('owner-panel').style.display = 'block';
+
+
+
+                addSystemMsg(`👑 房主转移给?${data.new_owner}`);
+
+
+
+            }
+
+
+
+            refreshPlayers();
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'room_renamed':
+
+
+
+            roomInfo.name = data.new_name;
+
+
+
+            document.getElementById('current-room-name').textContent = data.new_name;
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'kicked':
+
+
+
+            alert('你被移出了房❌? ' + data.message);
+
+
+
+            exitRoom();
+
+
+
+            showModal();
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'left_room':
+
+
+
+            exitRoom();
+
+
+
+            break;
+
+
+
+
+
+
+
+        case 'kick_success':
+
+
+
+            refreshPlayers();
+
+
+
+            break;
+
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// 房间操作
+
+
+
+// ================================================
+
+
+
+function createRoom() {
+
+
+
+    const name = document.getElementById('create-name').value.trim();
+
+
+
+    const roomName = document.getElementById('create-room-name').value.trim();
+
+
+
+    const rule = document.getElementById('create-rule').value;
+
+
+
+    const max = parseInt(document.getElementById('create-max').value) || 5;
+
+
+
+
+
+
+
+    if (!name || !roomName) {
+
+
+
+        document.getElementById('login-status').textContent = '请填写名字和房间名称';
+
+
+
+        return;
+
+
+
+    }
+
+
+
+    if (max < 2 || max > 5) {
+
+
+
+        document.getElementById('login-status').textContent = '人数需?-5人之❌?;
+
+
+
+        return;
+
+
+
+    }
+
+
+
+
+
+
+
+    currentPlayer = name;
+
+
+
+    ws.send(JSON.stringify({
+
+
+
+        type: 'create_room',
+
+
+
+        player_name: name,
+
+
+
+        room_name: roomName,
+
+
+
+        rule_type: rule,
+
+
+
+        max_players: max
+
+
+
+    }));
+
+
+
+}
+
+
+
+
+
+
+
+function joinRoom() {
+
+
+
+    const name = document.getElementById('join-name').value.trim();
+
+
+
+    const roomId = parseInt(document.getElementById('join-room-id').value);
+
+
+
+
+
+
+
+    if (!name || !roomId) {
+
+
+
+        document.getElementById('login-status').textContent = '请填写名字和房间ID';
+
+
+
+        return;
+
+
+
+    }
+
+
+
+
+
+
+
+    currentPlayer = name;
+
+
+
+    ws.send(JSON.stringify({
+
+
+
+        type: 'join_room',
+
+
+
+        player_name: name,
+
+
+
+        room_id: roomId
+
+
+
+    }));
+
+
+
+}
+
+
+
+
+
+
+
+function leaveRoom() {
+
+
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+
+
+
+        ws.send(JSON.stringify({ type: 'leave_room' }));
+
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+function exitRoom() {
+
+
+
+    document.getElementById('room-view').classList.remove('active');
+
+
+
+    document.getElementById('lobby-view').style.display = 'none';
+
+
+
+    document.getElementById('login-modal').classList.add('hidden');
+
+
+
+    currentRoomId = null;
+
+
+
+    roomInfo = {};
+
+
+
+    playersData = [];
+
+
+
+    document.getElementById('public-messages').innerHTML = '';
+
+
+
+    document.getElementById('private-messages').innerHTML = '';
+
+
+
+    document.getElementById('owner-badge').style.display = 'none';
+
+
+
+    document.getElementById('btn-rename').style.display = 'none';
+
+
+
+    document.getElementById('owner-panel').style.display = 'none';
+
+
+
+    // Clear saved session
+
+
+
+    localStorage.removeItem('trpg_player_name');
+
+
+
+    localStorage.removeItem('trpg_room_id');
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// 大堂
+
+
+
+// ================================================
+
+
+
+async function enterLobby() {
+
+
+
+    hideModal();
+
+
+
+    document.getElementById('lobby-view').style.display = 'block';
+
+
+
+    document.getElementById('room-view').classList.remove('active');
+
+
+
+    refreshRooms();
+
+
+
+}
+
+
+
+
+
+
+
+async function refreshRooms() {
+
+
+
+    try {
+
+
+
+        const res = await fetch('http://recognize-charitable-nylon-solving.trycloudflare.com/api/rooms');
+
+
+
+        const rooms = await res.json();
+
+
+
+        renderRoomList(rooms);
+
+
+
+    } catch (e) {
+
+
+
+        document.getElementById('room-list').innerHTML = '<div class="empty-msg">无法加载房间列表，请确保后端已启❌?/div>';
+
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+function renderRoomList(rooms) {
+
+
+
+    const container = document.getElementById('room-list');
+
+
+
+    if (!rooms || rooms.length === 0) {
+
+
+
+        container.innerHTML = '<div class="empty-msg">暂无房间，创建一个吧~</div>';
+
+
+
+        return;
+
+
+
+    }
+
+
+
+    container.innerHTML = '<div class="room-grid">' + rooms.map(r => `
+
+
+
+        <div class="room-card">
+
+
+
+            <div class="room-name">${escapeHtml(r.name)}</div>
+
+
+
+            <div class="room-status ${r.status === 'playing' ? 'playing' : 'waiting'}">${r.status === 'playing' ? '🔴 进行❌? : '🟢 等待❌?}</div>
+
+
+
+            <div class="room-info">
+
+
+
+                规则: ${r.rule_type} | 人数: ${r.player_count || 0}/${r.max_players} | 房主: ${escapeHtml(r.owner_name)}
+
+
+
+            </div>
+
+
+
+            <div style="font-size:12px;color:#555;margin-bottom:8px">ID: ${r.id}</div>
+
+
+
+            <button ${r.status === 'playing' ? 'disabled title="游戏进行❌?' : ''} onclick="quickJoin(${r.id})">加入房间</button>
+
+
+
+        </div>
+
+
+
+    `).join('') + '</div>';
+
+
+
+}
+
+
+
+
+
+
+
+function quickJoin(roomId) {
+
+
+
+    document.getElementById('join-room-id').value = roomId;
+
+
+
+    switchTab('login');
+
+
+
+    showModal();
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// 进入房间界面
+
+
+
+// ================================================
+
+
+
+function enterRoom(room, playerName, messages) {
+
+
+
+    document.getElementById('lobby-view').style.display = 'none';
+
+
+
+    document.getElementById('room-view').classList.add('active');
+
+
+
+    document.getElementById('current-room-name').textContent = room.name;
+
+
+
+    document.getElementById('current-room-rule').textContent = room.rule_type;
+
+
+
+
+
+
+
+    // 清空旧消❌?
+
+
+
+    document.getElementById('public-messages').innerHTML = '';
+
+
+
+    document.getElementById('private-messages').innerHTML = '';
+
+
+
+
+
+
+
+    // Load history messages
+
+
+
+    messages.forEach(msg => {
+
+
+
+        if (msg.message_type === 'public') {
+
+
+
+            addPublicMsg(msg.sender_name, msg.content,
+
+
+
+                msg.sender_name === 'KP' ? 'kp' : 'public');
+
+
+
+        } else if (msg.message_type === 'private') {
+
+
+
+            // Only show private messages related to current player
+
+
+
+            if (msg.sender_name === currentPlayer || msg.target_player === currentPlayer || msg.sender_name === 'KP') {
+
+
+
+                addPrivateMsg(msg.sender_name, msg.content);
+
+
+
+            }
+
+
+
+        }
+
+
+
+    });
+
+
+
+
+
+
+
+    addSystemMsg(`🎲 欢迎来到?{room.name}」！`);
+
+
+
+    refreshPlayers();
+
+
+
+    loadTasks();
+
+
+
+    loadAvatarInfo();
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// Dice Rolling
+
+
+
+// ================================================
+
+
+
+async function quickRoll(formula) {
+
+
+
+    if (!currentRoomId) return alert('请先进入房间');
+
+
+
+    await doRoll(formula);
+
+
+
+}
+
+
+
+async function customRoll() {
+
+
+
+    const f = document.getElementById('dice-formula').value.trim();
+
+
+
+    if (!f) return;
+
+
+
+    await doRoll(f);
+
+
+
+    document.getElementById('dice-formula').value = '';
+
+
+
+}
+
+
+
+async function doRoll(formula) {
+
+
+
+    try {
+
+
+
+        const res = await fetch(`http://recognize-charitable-nylon-solving.trycloudflare.com/api/roll`, {
+
+
+
+            method: 'POST',
+
+
+
+            headers: { 'Content-Type': 'application/json' },
+
+
+
+            body: JSON.stringify({ room_id: currentRoomId, player_name: currentPlayer, formula })
+
+
+
+        });
+
+
+
+        if (!res.ok) alert('投骰失败');
+
+
+
+    } catch (e) { alert('投骰失败: ' + e.message); }
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// Tasks
+
+
+
+// ================================================
+
+
+
+async function loadTasks() {
+
+
+
+    if (!currentRoomId) return;
+
+
+
+    try {
+
+
+
+        const r = await fetch(`http://recognize-charitable-nylon-solving.trycloudflare.com/api/rooms/${currentRoomId}/tasks`);
+
+
+
+        const t = await r.json();
+
+
+
+        const mainEl = document.getElementById('task-main');
+
+
+
+        const sideEl = document.getElementById('task-sidequests');
+
+
+
+        if (t.main) { mainEl.textContent = t.main; } else { mainEl.textContent = '暂无主线任务'; }
+
+
+
+        if (t.sidequests && t.sidequests.length) {
+
+
+
+            sideEl.innerHTML = t.sidequests.map(s => `· ${escapeHtml(s)}`).join('<br>');
+
+
+
+        } else { sideEl.textContent = '暂无支线任务'; }
+
+
+
+    } catch (e) {}
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// Avatar
+
+
+
+// ================================================
+
+
+
+async function loadAvatarInfo() {
+
+
+
+    document.getElementById('avatar-name').textContent = currentPlayer || '-';
+
+
+
+    if (currentPlayerData && currentPlayerData.avatar) {
+
+
+
+        const preview = document.getElementById('avatar-preview');
+
+
+
+        preview.textContent = '';
+
+
+
+        preview.style.backgroundImage = `url(${currentPlayerData.avatar})`;
+
+
+
+        preview.style.backgroundSize = 'cover';
+
+
+
+        preview.style.backgroundPosition = 'center';
+
+
+
+    }
+
+
+
+}
+
+
+
+async function uploadAvatar(fileInput) {
+
+
+
+    const file = fileInput.files[0];
+
+
+
+    if (!file) return;
+
+
+
+    // Validate: max 5MB
+
+
+
+    if (file.size > 5 * 1024 * 1024) { alert('图片太大，请控制❌?MB以内'); return; }
+
+
+
+    const statusEl = document.getElementById('avatar-status');
+
+
+
+    statusEl.textContent = '处理中?..';
+
+
+
+    try {
+
+
+
+        // Auto-crop and resize to 200x250 using canvas
+
+
+
+        const img = await new Promise((resolve, reject) => {
+
+
+
+            const i = new Image();
+
+
+
+            i.onload = () => resolve(i);
+
+
+
+            i.onerror = reject;
+
+
+
+            i.src = URL.createObjectURL(file);
+
+
+
+        });
+
+
+
+        const canvas = document.createElement('canvas');
+
+
+
+        canvas.width = 200; canvas.height = 250;
+
+
+
+        const ctx = canvas.getContext('2d');
+
+
+
+        // Cover crop: fill the whole area, center-cropped
+
+
+
+        const imgRatio = img.width / img.height;
+
+
+
+        const targetRatio = 200 / 250; // 0.8
+
+
+
+        let sx, sy, sw, sh;
+
+
+
+        if (imgRatio > targetRatio) {
+
+
+
+            // Image is wider - crop sides
+
+
+
+            sh = img.height; sw = sh * targetRatio;
+
+
+
+            sx = (img.width - sw) / 2; sy = 0;
+
+
+
+        } else {
+
+
+
+            // Image is taller - crop top/bottom
+
+
+
+            sw = img.width; sh = sw / targetRatio;
+
+
+
+            sx = 0; sy = (img.height - sh) / 2;
+
+
+
+        }
+
+
+
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 200, 250);
+
+
+
+        URL.revokeObjectURL(img.src);
+
+
+
+        // Convert to blob
+
+
+
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
+
+
+
+        const formData = new FormData();
+
+
+
+        formData.append('file', blob, `${currentPlayer || 'avatar'}_${Date.now()}.jpg`);
+
+
+
+        formData.append('player_name', currentPlayer);
+
+
+
+        formData.append('room_id', currentRoomId);
+
+
+
+        statusEl.textContent = '上传中?..';
+
+
+
+        const res = await fetch('http://recognize-charitable-nylon-solving.trycloudflare.com/api/avatar/upload', { method: 'POST', body: formData });
+
+
+
+        const data = await res.json();
+
+
+
+        if (data.url) {
+
+
+
+            const preview = document.getElementById('avatar-preview');
+
+
+
+            preview.textContent = '';
+
+
+
+            preview.style.backgroundImage = `url(${data.url})`;
+
+
+
+            preview.style.backgroundSize = 'cover';
+
+
+
+            preview.style.backgroundPosition = 'center';
+
+
+
+            statusEl.textContent = '❌?上传成功';
+
+
+
+        } else { statusEl.textContent = '❌?' + (data.error || data.detail || data.message || '上传失败'); console.error('Upload fail:', data); }
+
+
+
+    } catch (e) { statusEl.textContent = '❌?上传失败: ' + e.message; console.error(e); }
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// 聊天
+
+
+
+// ================================================
+
+
+
+function addPublicMsg(sender, text, cls = 'public') {
+
+
+
+    const box = document.getElementById('public-messages');
+
+
+
+    const div = document.createElement('div');
+
+
+
+    div.className = `msg-item ${cls}`;
+
+
+
+    const label = cls === 'kp' ? 'KP' : sender;
+
+
+
+    div.innerHTML = `<span class="sender">${escapeHtml(label)}:</span>${escapeHtml(text)}`;
+
+
+
+    box.appendChild(div);
+
+
+
+    box.scrollTop = box.scrollHeight;
+
+
+
+}
+
+
+
+
+
+
+
+function addPrivateMsg(sender, text) {
+
+
+
+    const box = document.getElementById('private-messages');
+
+
+
+    const div = document.createElement('div');
+
+
+
+    div.className = 'msg-item private';
+
+
+
+    const label = sender === 'KP' ? 'KP' : sender;
+
+
+
+    const colorStyle = sender === 'KP' ? 'color:#2ecc71' : 'color:#9b59b6';
+
+
+
+    div.innerHTML = `<span class="sender" style="${colorStyle}">${escapeHtml(label)}:</span>${escapeHtml(text)}`;
+
+
+
+    box.appendChild(div);
+
+
+
+    box.scrollTop = box.scrollHeight;
+
+
+
+}
+
+
+
+
+
+
+
+function addSystemMsg(text) {
+
+
+
+    const box = document.getElementById('public-messages');
+
+
+
+    const div = document.createElement('div');
+
+
+
+    div.className = 'msg-item system';
+
+
+
+    div.textContent = text;
+
+
+
+    box.appendChild(div);
+
+
+
+    box.scrollTop = box.scrollHeight;
+
+
+
+}
+
+
+
+
+
+
+
+function sendPublic() {
+
+
+
+    const input = document.getElementById('public-input');
+
+
+
+    const text = input.value.trim();
+
+
+
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+
+
+    ws.send(JSON.stringify({ type: 'message', player_name: currentPlayer, content: text, message_type: 'public' }));
+
+
+
+    // Don't add locally - backend will broadcast it back
+
+
+
+    input.value = '';
+
+
+
+}
+
+
+
+
+
+
+
+function sendPrivate() {
+
+
+
+    const input = document.getElementById('private-input');
+
+
+
+    let text = input.value.trim();
+
+
+
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+
+
+
+
+
+
+    // Hidden dice: /暗骰 2d20 or /暗骰 1d100+5
+
+
+
+    const hiddenMatch = text.match(/^\/暗骰\s+(.+)/i);
+
+
+
+    if (hiddenMatch) {
+
+
+
+        const formula = hiddenMatch[1].trim();
+
+
+
+        doHiddenRoll(formula);
+
+
+
+        input.value = '';
+
+
+
+        return;
+
+
+
+    }
+
+
+
+
+
+
+
+    ws.send(JSON.stringify({ type: 'message', player_name: currentPlayer, content: text, message_type: 'private', target_name: 'KP' }));
+
+
+
+    addPrivateMsg(currentPlayer, text);
+
+
+
+    input.value = '';
+
+
+
+}
+
+
+
+
+
+
+
+async function doHiddenRoll(formula) {
+
+
+
+    try {
+
+
+
+        const res = await fetch(`http://recognize-charitable-nylon-solving.trycloudflare.com/api/roll`, {
+
+
+
+            method: 'POST',
+
+
+
+            headers: { 'Content-Type': 'application/json' },
+
+
+
+            body: JSON.stringify({ room_id: currentRoomId, player_name: currentPlayer, formula, hidden: true })
+
+
+
+        });
+
+
+
+        const data = await res.json();
+
+
+
+        if (data.ok) {
+
+
+
+            // Show result locally with hidden dice style
+
+
+
+            addPrivateMsg('🎲 暗骰', `${formula} = ${data.result.total} (${data.result.details.join(', ')})  ❌?只有你和KP能看到`);
+
+
+
+        } else {
+
+
+
+            addPrivateMsg('系统', '暗骰失败: ' + (data.error || '未知错误'));
+
+
+
+        }
+
+
+
+    } catch (e) { addPrivateMsg('系统', '暗骰失败: ' + e.message); }
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// Player List
+
+
+
+// ================================================
+
+
+
+async function refreshPlayers() {
+
+
+
+    if (!currentRoomId) return;
+
+
+
+    try {
+
+
+
+        const res = await fetch('http://recognize-charitable-nylon-solving.trycloudflare.com/api/rooms/' + currentRoomId + '/players');
+
+
+
+        const data = await res.json();
+
+
+
+        if (data && data.length > 0) playersData = data;
+
+
+
+        renderPlayers(playersData, roomInfo.owner_name);
+
+
+
+    } catch (e) {
+
+
+
+        renderPlayers(playersData, roomInfo.owner_name);
+
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+function renderPlayers(players, ownerName) {
+
+
+
+    const list = document.getElementById('player-list');
+
+
+
+    const count = document.getElementById('player-count');
+
+
+
+    const safeOwner = ownerName || roomInfo.owner_name;
+
+
+
+    count.textContent = players.length;
+
+
+
+    list.innerHTML = players.map(p => `
+
+
+
+        <div class="player-item">
+
+
+
+            <span class="pname">${escapeHtml(p.name)}${p.name === currentPlayer ? ' (❌?' : ''}</span>
+
+
+
+            ${p.name === safeOwner ? '<span class="ptag owner">房主</span>' : ''}
+
+
+
+            ${isOwner && p.name !== currentPlayer && p.name !== safeOwner ? `<button class="kick-btn" onclick="kickPlayer('${escapeHtml(p.name)}')">❌?/button>` : ''}
+
+
+
+        </div>
+
+
+
+    `).join('');
+
+
+
+
+
+
+
+    // Update character card for current player
+
+
+
+    const me = players.find(p => p.name === currentPlayer);
+
+
+
+    if (me) renderCharCard(me);
+
+
+
+}
+
+
+
+
+
+
+
+function kickPlayer(targetName) {
+
+
+
+    if (!confirm(`确定踢出 ${targetName}？`)) return;
+
+
+
+    ws.send(JSON.stringify({ type: 'kick_player', target_name: targetName }));
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// Character Card (rule-type specific)
+
+
+
+// ================================================
+
+
+
+let charData = {};
+
+
+
+
+
+
+
+function renderCharCard(player) {
+
+
+
+    const rule = roomInfo.rule_type || 'COC';
+
+
+
+    const body = document.getElementById('char-card-body');
+
+
+
+    const tag = document.getElementById('char-rule-tag');
+
+
+
+    tag.textContent = '[' + rule + ']';
+
+
+
+
+
+
+
+    try { charData = JSON.parse(player.char_data || '{}'); } catch(e) { charData = {}; }
+
+
+
+
+
+
+
+    let html = '';
+
+
+
+
+
+
+
+    // Common: name + role + HP
+
+
+
+    html += `<div class="char-row"><label>名字</label><span class="val">${escapeHtml(player.name)}</span></div>`;
+
+
+
+    html += `<div class="char-row"><label>职业</label><input id="char-role" value="${escapeHtml(player.role || '')}" placeholder="职业"></div>`;
+
+
+
+    html += `<div class="char-row"><label>HP</label><input id="char-hp" type="number" value="${player.hp || 10}" style="max-width:60px"></div>`;
+
+
+
+
+
+
+
+    if (rule === 'COC') {
+
+
+
+        html += `<div class="char-section"><div class="char-section-title">属❌?/div>`;
+
+
+
+        const attrs = ['STR','DEX','CON','APP','POW','SIZ','INT','EDU'];
+
+
+
+        attrs.forEach(a => {
+
+
+
+            html += `<div class="char-row"><label>${a}</label><input id="char-${a}" type="number" value="${charData[a] || ''}" placeholder="0" style="max-width:60px"></div>`;
+
+
+
+        });
+
+
+
+        html += `</div>`;
+
+
+
+        html += `<div class="char-section"><div class="char-section-title">SAN</div>`;
+
+
+
+        html += `<div class="char-row"><label>SAN</label><input id="char-SAN" type="number" value="${charData.SAN || ''}" placeholder="0" style="max-width:60px"></div>`;
+
+
+
+        html += `</div>`;
+
+
+
+        html += renderTagList('skills', '技❌?);
+
+
+
+    } else if (rule === 'DND') {
+
+
+
+        html += `<div class="char-section"><div class="char-section-title">属❌?/div>`;
+
+
+
+        const attrs = ['STR','DEX','CON','INT','WIS','CHA'];
+
+
+
+        attrs.forEach(a => {
+
+
+
+            html += `<div class="char-row"><label>${a}</label><input id="char-${a}" type="number" value="${charData[a] || ''}" placeholder="0" style="max-width:60px"></div>`;
+
+
+
+        });
+
+
+
+        html += `</div>`;
+
+
+
+        html += `<div class="char-row"><label>AC</label><input id="char-AC" type="number" value="${charData.AC || ''}" placeholder="0" style="max-width:60px"></div>`;
+
+
+
+        html += renderTagList('spells', '法术');
+
+
+
+        html += renderTagList('features', '特❌?);
+
+
+
+    } else if (rule === '无限流) {
+
+
+
+        html += `<div class="char-section"><div class="char-section-title">属❌?/div>`;
+
+
+
+        const attrs = ['STR','DEX','CON','INT','WIS','CHA'];
+
+
+
+        attrs.forEach(a => {
+
+
+
+            html += `<div class="char-row"><label>${a}</label><input id="char-${a}" type="number" value="${charData[a] || ''}" placeholder="0" style="max-width:60px"></div>`;
+
+
+
+        });
+
+
+
+        html += `</div>`;
+
+
+
+        html += `<div class="char-row"><label>积分</label><input id="char-points" type="number" value="${charData.points || ''}" placeholder="0" style="max-width:80px"></div>`;
+
+
+
+        html += renderTagList('skills', '技❌?);
+
+
+
+        html += renderTagList('items', '随身道具');
+
+
+
+        html += renderTagList('equipment', '装备');
+
+
+
+    }
+
+
+
+
+
+
+
+    html += `<button class="btn-save-char" onclick="saveCharCard()">💾 保存角色?/button>`;
+
+
+
+    body.innerHTML = html;
+
+
+
+}
+
+
+
+
+
+
+
+function renderTagList(key, label) {
+
+
+
+    const tags = charData[key] || [];
+
+
+
+    let html = `<div class="char-section"><div class="char-section-title">${label}</div>`;
+
+
+
+    tags.forEach((t, i) => {
+
+
+
+        html += `<span class="char-tag">${escapeHtml(t)}<span class="remove-tag" onclick="removeTag('${key}',${i})">❌?/span></span>`;
+
+
+
+    });
+
+
+
+    html += `<div class="char-add-row"><input id="add-${key}" placeholder="+ ${label}"><button onclick="addTag('${key}')">添加</button></div>`;
+
+
+
+    html += `</div>`;
+
+
+
+    return html;
+
+
+
+}
+
+
+
+
+
+
+
+function addTag(key) {
+
+
+
+    const input = document.getElementById('add-' + key);
+
+
+
+    const val = input.value.trim();
+
+
+
+    if (!val) return;
+
+
+
+    if (!charData[key]) charData[key] = [];
+
+
+
+    charData[key].push(val);
+
+
+
+    const me = playersData.find(p => p.name === currentPlayer);
+
+
+
+    if (me) renderCharCard(me);
+
+
+
+}
+
+
+
+
+
+
+
+function removeTag(key, index) {
+
+
+
+    if (charData[key]) charData[key].splice(index, 1);
+
+
+
+    const me = playersData.find(p => p.name === currentPlayer);
+
+
+
+    if (me) renderCharCard(me);
+
+
+
+}
+
+
+
+
+
+
+
+function saveCharCard() {
+
+
+
+    const rule = roomInfo.rule_type || 'COC';
+
+
+
+    const data = {};
+
+
+
+
+
+
+
+    // Collect rule-specific attrs
+
+
+
+    if (rule === 'COC') {
+
+
+
+        ['STR','DEX','CON','APP','POW','SIZ','INT','EDU','SAN'].forEach(a => {
+
+
+
+            const el = document.getElementById('char-' + a);
+
+
+
+            if (el && el.value) data[a] = parseInt(el.value) || 0;
+
+
+
+        });
+
+
+
+        data.skills = charData.skills || [];
+
+
+
+    } else if (rule === 'DND') {
+
+
+
+        ['STR','DEX','CON','INT','WIS','CHA','AC'].forEach(a => {
+
+
+
+            const el = document.getElementById('char-' + a);
+
+
+
+            if (el && el.value) data[a] = parseInt(el.value) || 0;
+
+
+
+        });
+
+
+
+        data.spells = charData.spells || [];
+
+
+
+        data.features = charData.features || [];
+
+
+
+    } else if (rule === '无限流) {
+
+
+
+        ['STR','DEX','CON','INT','WIS','CHA'].forEach(a => {
+
+
+
+            const el = document.getElementById('char-' + a);
+
+
+
+            if (el && el.value) data[a] = parseInt(el.value) || 0;
+
+
+
+        });
+
+
+
+        const pEl = document.getElementById('char-points');
+
+
+
+        if (pEl && pEl.value) data.points = parseInt(pEl.value) || 0;
+
+
+
+        data.skills = charData.skills || [];
+
+
+
+        data.items = charData.items || [];
+
+
+
+        data.equipment = charData.equipment || [];
+
+
+
+    }
+
+
+
+
+
+
+
+    const role = document.getElementById('char-role')?.value || '';
+
+
+
+    const hp = document.getElementById('char-hp')?.value || '10';
+
+
+
+
+
+
+
+    ws.send(JSON.stringify({
+
+
+
+        type: 'update_character',
+
+
+
+        player_name: currentPlayer,
+
+
+
+        role, hp, status: 'online',
+
+
+
+        char_data: JSON.stringify(data)
+
+
+
+    }));
+
+
+
+
+
+
+
+    addSystemMsg('❌?角色卡已保存');
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// Owner Controls
+
+
+
+// ================================================
+
+
+
+function showRename() {
+
+
+
+    const input = document.getElementById('rename-input');
+
+
+
+    input.style.display = input.style.display === 'none' ? 'block' : 'none';
+
+
+
+    if (input.style.display === 'block') input.focus();
+
+
+
+}
+
+
+
+
+
+
+
+function renameRoom() {
+
+
+
+    const newName = document.getElementById('rename-input').value.trim();
+
+
+
+    if (!newName) return;
+
+
+
+    ws.send(JSON.stringify({ type: 'rename_room', new_name: newName }));
+
+
+
+    document.getElementById('rename-input').value = '';
+
+
+
+    document.getElementById('rename-input').style.display = 'none';
+
+
+
+}
+
+
+
+
+
+
+
+function dismissRoom() {
+
+
+
+    if (!confirm('解散房间将清空所有聊天记录，确定解散吗?)) return;
+
+
+
+    ws.send(JSON.stringify({ type: 'dismiss_room' }));
+
+
+
+    exitRoom();
+
+
+
+    showModal();
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// 工具
+
+
+
+// ================================================
+
+
+
+function escapeHtml(str) {
+
+
+
+    if (!str) return '';
+
+
+
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+
+
+}
+
+
+
+
+
+
+
+// ================================================
+
+
+
+// 初始化
+
+
+
+// ================================================
+
+
+
+connect();
+
+
+
+</script>
+
+
+
+</body>
+
+
+
+</html>
+
+
+
